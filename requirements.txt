@@ -1,0 +1,7 @@
+numpy==2.1.1
+pandas==2.2.3
+black
+flake8
+python-dotenv
+lxml
+commitizen

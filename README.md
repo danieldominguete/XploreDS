@@ -1,6 +1,18 @@
 # XploreDS
-Repository of examples of Data Science tecniques.
 
+Repository of examples of Data Science cookbooks and library.
+
+## Repository Organization
+
+- data: folder of data files
+- src: source codes with examples
+- lib: library of encapsulted methods
+- docs: most relevant technical documents
+- guides: "how to" documentation of main tools
+- output: folder for outputs produced by scripts
+- static: static files of project 
+- tests: test scripts  
+  
 ## Setup Environment
 
 1 - Install virtual environment package
@@ -25,16 +37,7 @@ Windows: `XploreDS\Scripts\activate`
 
 `PYTHON_WARNINGS="ignore"`
 
-## Repository Organization
-
-- data: folder of data files
-- src: source codes with examples
-- lib: library of encapsulted methods
-- docs: most relevant technical documents
-- guides: "how to" documentation of main tools
-- output: folder for outputs produced by scripts
-- static: static files of project 
-- tests: test scripts   
+ 
 
 # Changelog
 

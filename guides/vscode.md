@@ -1,5 +1,7 @@
 # Visual Studio Code
 
+This is my IDE customization recommendations for Visual Studio code.
+
 ## Extensions
 
 - Python
@@ -11,6 +13,9 @@
 - Markdown All in One
 - Data Wrangler
 - Parquet-viewer
+- Jupyter
+- Raiwbow csv
+- SQLTools
 
 
 ## Settings

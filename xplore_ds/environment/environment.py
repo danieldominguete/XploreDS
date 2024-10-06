@@ -5,6 +5,7 @@ Xplore DS :: Environment Tools Package
 # importando as bibliotecas padrao
 from pathlib import Path
 import sys, os
+import numpy as np
 
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib
 project_folder = Path(__file__).resolve().parents[2]
@@ -18,3 +19,6 @@ class XploreDSLocalhost:
 
         # criando a pasta de runs caso não exista
         create_folder(str(run_folder) + "/runs")
+
+        # setando valores de sementes
+        np.random.seed(42)

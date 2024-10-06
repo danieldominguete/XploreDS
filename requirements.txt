@@ -1,5 +1,9 @@
 numpy==2.1.1
 pandas==2.2.3
+scikit_learn==1.5.2
+pyarrow==17.0.0
+statsmodels==0.14.4
+pydantic==2.9.2
 black
 flake8
 python-dotenv

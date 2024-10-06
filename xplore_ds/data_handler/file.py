@@ -14,7 +14,7 @@ project_folder = Path(__file__).resolve().parents[2]
 sys.path.append(str(project_folder))
 
 
-def load_csv_database(
+def load_dataframe_from_csv(
     filepath: str,
     separator: str = ";",
     selected_columns: list = [],
@@ -291,3 +291,64 @@ def get_nrows_from_file(filepath) -> int:
         for i, l in enumerate(f):
             pass
     return i + 1
+
+
+def save_dataframe_to_parquet(data: pd, file_path: str, log: object) -> None:
+    """
+    Save a pandas DataFrame to a Parquet file.
+
+    This function takes a pandas DataFrame and a file path, and saves the DataFrame
+    to a Parquet file at the specified path. It's useful for efficiently storing
+    large datasets in a columnar format.
+
+    Args:
+        data (pandas.DataFrame): The DataFrame to save.
+        file_path (str): The path where the Parquet file will be saved.
+
+    Returns:
+        None: This function does not return anything. It saves the DataFrame to a file.
+
+    Raises:
+        IOError: If there's an error opening or writing to the file.
+            The specific exception type depends on what went wrong
+            (e.g., FileNotFoundError, PermissionError).
+
+    Note:
+        - This function uses the pandas to_parquet method to save the DataFrame.
+        - It's particularly useful for large datasets where the Parquet format
+          provides efficient compression and columnar storage.
+    """
+    log.info("Saving dataframe to parquet file: " + file_path)
+
+    # verificando se a pasta existe caso contrario criar a pasta
+    create_folder(os.path.dirname(file_path))
+
+    data.to_parquet(file_path)
+
+
+def load_dataframe_from_parquet(file_path: str, log: object) -> pd:
+    """
+    Load a pandas DataFrame from a Parquet file.
+
+    This function takes a file path, and loads the DataFrame
+    from a Parquet file at the specified path.
+
+    Args:
+        file_path (str): The path where the Parquet file will be saved.
+
+    Returns:
+        pandas.DataFrame: The DataFrame loaded from the Parquet file.
+
+    Raises:
+        IOError: If there's an error opening or writing to the file.
+            The specific exception type depends on what went wrong
+            (e.g., FileNotFoundError, PermissionError).
+
+    Note:
+        - This function uses the pandas read_parquet method to load the DataFrame.
+        - It's particularly useful for large datasets where the Parquet format
+          provides efficient compression and columnar storage.
+    """
+    log.info("Loading dataframe from parquet file: " + file_path)
+
+    return pd.read_parquet(file_path)

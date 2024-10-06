@@ -132,6 +132,24 @@ class XploreDSLogging:
         """
         logging.warning(message)
 
+    def error(self, message: str) -> None:
+        """
+        Log an error-level message.
+
+        This method logs the provided message using the logging module's error level.
+        It serves as a wrapper around logging.error() within the context of the class.
+
+        Args:
+            message (str): The message to be logged as an error.
+
+        Returns:
+            None
+
+        Example:
+            >>> self.error("Database connection failed")
+        """
+        logging.error(message)
+
     def title(self, message: str) -> None:
         """
         Log an title message.
@@ -172,7 +190,7 @@ class XploreDSLogging:
         logging.info(
             "=================================================================================="
         )
-        logging.info("Iniciando script: " + self.log_run)
+        logging.info("Starting script: " + self.log_run)
         logging.info(
             "=================================================================================="
         )
@@ -195,7 +213,7 @@ class XploreDSLogging:
         logging.info(
             "=================================================================================="
         )
-        logging.info("Finalizando script: " + self.log_run)
+        logging.info("Execution finished script: " + self.log_run)
         logging.info("Conclusion at " + str(time_ref_end.strftime("%Y-%m-%d %H:%M")))
         logging.info("Execution time: %.2f hours" % exec_time)
         logging.info(

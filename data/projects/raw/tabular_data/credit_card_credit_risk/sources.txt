@@ -1,0 +1,5 @@
+Binary Classification
+
+Credit Card Credit Risk
+https://www.kaggle.com/datasets/rikdifos/credit-card-approval-prediction/data
+

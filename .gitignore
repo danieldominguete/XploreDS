@@ -1,6 +1,10 @@
 # SO files
 .DS_Store
 
+# Data files
+*.csv
+*.parquet
+
 # Logs
 runs/
 

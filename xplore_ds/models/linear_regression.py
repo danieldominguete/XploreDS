@@ -37,11 +37,12 @@ class XLinearRegression(XploreDSModel):
             self.model = sm.GLS(data[target_column], data_input)
         else:
             self.log.error("Fit algorithm not implemented")
-        self.results = self.model.fit()
+
+        self.model = self.model.fit()
 
     def summary(self):
 
-        self.log.info(self.results.summary())
+        self.log.info(self.model.summary())
 
     def predict(self, data_test, features_column_name, y_predict_column_name):
         """
@@ -55,7 +56,7 @@ class XLinearRegression(XploreDSModel):
         if self.setup.set_intersection_with_zero == False:
             data_input = sm.add_constant(data_input)
 
-        test = self.model.predict(data_input)
+        data_test[y_predict_column_name] = self.model.predict(data_input)
 
         return data_test
 

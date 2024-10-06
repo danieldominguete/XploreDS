@@ -13,6 +13,10 @@ project_folder = Path(__file__).resolve().parents[2]
 sys.path.append(str(project_folder))
 
 from xplore_ds.data_handler.file import create_folder
+from xplore_ds.features.features_scaling import (
+    scaler_feature_fit,
+    scaler_feature_transform,
+)
 
 
 class XploreDSModel(ABC):
@@ -22,15 +26,17 @@ class XploreDSModel(ABC):
 
     def __init__(
         self,
+        kb_setup: BaseModel = None,
         setup: BaseModel = None,
         hyperparameters: BaseModel = None,
         log: object = None,
     ) -> None:
 
-        self.model = None
+        self.kb_setup = kb_setup
         self.setup = setup
         self.hyperparameters = hyperparameters
         self.log = log
+        self.model = None
 
         super().__init__()
 
@@ -78,3 +84,27 @@ class XploreDSModel(ABC):
         Print a tunning results summary.
         """
         pass
+
+    def features_pre_processing_fit(self, data_train):
+        """
+        Scale the features of the given data using the trained scaler.
+        """
+
+        for feature in self.kb_setup.features:
+            feature.scaler = scaler_feature_fit(
+                data_train=data_train,
+                feature=feature.name,
+                log=self.log,
+            )
+
+    def features_pre_processing_predict(self, data):
+        """
+        Scale the features of the given data using the trained scaler.
+        """
+
+        for feature in self.kb_setup.features:
+            feature.scaler = scaler_feature_transform(
+                data=data,
+                feature=feature.name,
+                log=self.log,
+            )

@@ -18,6 +18,12 @@ from xplore_ds.environment.logging import XploreDSLogging
 from xplore_ds.data_handler.file import load_dataframe_from_parquet
 from xplore_ds.models.linear_regression import XLinearRegression
 import xplore_ds.data_schemas.linear_regression_config as config
+from xplore_ds.data_schemas.knowledge_base_config import (
+    KnowledgeBaseSetup,
+    FeaturesSetup,
+    TargetSetup,
+    ScalingMethod,
+)
 
 # ==================================================================================
 # Setup do script
@@ -34,6 +40,9 @@ env = XploreDSLocalhost(run_folder=project_folder)
 log = XploreDSLogging(project_root=project_folder, script_name=script_name)
 log.init_run()
 
+# Seeds
+random_state = 100
+
 # ==================================================================================
 # Parametrizacao do script
 # ==================================================================================
@@ -48,28 +57,33 @@ input_dataset_test_file_path = (
     "data/projects/stage/wine_quality/wine_quality_test.parquet"
 )
 
+# Setup da base de conhecimento
+
+# configuracao de cada feature
+fixed_acidity = FeaturesSetup(name="fixed acidity", scaler=ScalingMethod.none_scaler)
+volatile_acidity = FeaturesSetup(
+    name="volatile acidity", scaler=ScalingMethod.min_max_scaler
+)
+citric_acid = FeaturesSetup(name="citric acid", scaler=ScalingMethod.mean_std_scaler)
+residual_sugar = FeaturesSetup(name="residual sugar", scaler=None)
+chlorides = FeaturesSetup(name="chlorides", scaler=None)
+free_sulfur_dioxide = FeaturesSetup(name="free sulfur dioxide", scaler=None)
+total_sulfur_dioxide = FeaturesSetup(name="total sulfur dioxide", scaler=None)
+density = FeaturesSetup(name="density", scaler=None)
+pH = FeaturesSetup(name="pH", scaler=None)
+sulphates = FeaturesSetup(name="sulphates", scaler=None)
+alcohol = FeaturesSetup(name="alcohol", scaler=None)
+quality = TargetSetup(name="quality")
+
+knowledge_base_setup = KnowledgeBaseSetup(
+    features=[fixed_acidity, volatile_acidity, citric_acid, residual_sugar],
+    target=quality,
+)
+
 # Setup do modelo
-features = [
-    "fixed acidity",
-    "volatile acidity",
-    "citric acid",
-    "residual sugar",
-    "chlorides",
-    "free sulfur dioxide",
-    "total sulfur dioxide",
-    "density",
-    "pH",
-    "sulphates",
-    "alcohol",
-]
-target_column = "quality"
-
-
-# Hiperparametros
-random_state = 100
-
 model_setup = config.LinearRegressionSetup(set_intersection_with_zero=False)
 
+# Hiperparametros
 model_hyperparameters = config.LinearRegressionHyperparameters(
     fit_algorithm=config.FitAlgorithm.ordinary_least_squares,
 )

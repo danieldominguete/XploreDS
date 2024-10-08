@@ -13,10 +13,7 @@ project_folder = Path(__file__).resolve().parents[2]
 sys.path.append(str(project_folder))
 
 from xplore_ds.data_handler.file import create_folder
-from xplore_ds.features.features_scaling import (
-    scaler_feature_fit,
-    scaler_feature_transform,
-)
+from xplore_ds.features.xploreds_features import XploreDSFeatures
 
 
 class XploreDSModel(ABC):
@@ -26,29 +23,39 @@ class XploreDSModel(ABC):
 
     def __init__(
         self,
-        kb_setup: BaseModel = None,
-        setup: BaseModel = None,
-        hyperparameters: BaseModel = None,
+        kb_config: BaseModel = None,
+        model_config: BaseModel = None,
+        tunning_config: BaseModel = None,
         log: object = None,
     ) -> None:
 
-        self.kb_setup = kb_setup
-        self.setup = setup
-        self.hyperparameters = hyperparameters
+        self.kb_config = kb_config
+        self.model_config = model_config
+        self.tunning_config = tunning_config
         self.log = log
         self.model = None
+
+        self.features_setup = XploreDSFeatures(
+            features_config=self.kb_config.features,
+            log=self.log,
+        )
+
+        self.target_setup = XploreDSFeatures(
+            features_config=self.kb_config.target,
+            log=self.log,
+        )
 
         super().__init__()
 
     @abstractmethod
-    def train(self, data_train, features_column_name, y_target_column_name):
+    def fit(self, data, random_state, log):
         """
         Train machine learning model
         """
         pass
 
     @abstractmethod
-    def predict(self, data_test, features_column_name, y_predict_column_name):
+    def predict(self, data, y_predict_column_name):
         """
         Calculate predictions for the given test data.
         """
@@ -85,26 +92,43 @@ class XploreDSModel(ABC):
         """
         pass
 
-    def features_pre_processing_fit(self, data_train):
+    def features_fit(self, data):
         """
         Scale the features of the given data using the trained scaler.
         """
 
-        for feature in self.kb_setup.features:
-            feature.scaler = scaler_feature_fit(
-                data_train=data_train,
-                feature=feature.name,
-                log=self.log,
-            )
+        self.features_setup.fit(
+            data=data,
+            log=self.log,
+        )
 
-    def features_pre_processing_predict(self, data):
+        return data
+
+    def features_transform(self, data):
         """
         Scale the features of the given data using the trained scaler.
         """
 
-        for feature in self.kb_setup.features:
-            feature.scaler = scaler_feature_transform(
-                data=data,
-                feature=feature.name,
-                log=self.log,
-            )
+        self.features_setup.transform(
+            data=data,
+            log=self.log,
+        )
+
+        return data
+
+    def features_fit_transform(self, data):
+        """
+        Scale the features of the given data using the trained scaler.
+        """
+
+        self.features_setup.fit(
+            data=data,
+            log=self.log,
+        )
+
+        self.features_setup.transform(
+            data=data,
+            log=self.log,
+        )
+
+        return data

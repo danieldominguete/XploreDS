@@ -18,12 +18,6 @@ from xplore_ds.environment.logging import XploreDSLogging
 from xplore_ds.data_handler.file import load_dataframe_from_parquet
 from xplore_ds.models.linear_regression import XLinearRegression
 import xplore_ds.data_schemas.linear_regression_config as config
-from xplore_ds.data_schemas.knowledge_base_config import (
-    KnowledgeBaseConfig,
-    FeaturesConfig,
-    TargetConfig,
-    ScalingMethod,
-)
 
 # ==================================================================================
 # Setup do script
@@ -40,9 +34,6 @@ env = XploreDSLocalhost(run_folder=project_folder)
 log = XploreDSLogging(project_root=project_folder, script_name=script_name)
 log.init_run()
 
-# Seeds
-random_state = 100
-
 # ==================================================================================
 # Parametrizacao do script
 # ==================================================================================
@@ -57,45 +48,29 @@ input_dataset_test_file_path = (
     "data/projects/stage/wine_quality/wine_quality_test.parquet"
 )
 
-# Setup da base de conhecimento
-
-# configuracao de features e target
-
-volatile_acidity = FeaturesConfig(
-    name="volatile acidity", scaling_method=ScalingMethod.min_max_scaler
-)
-citric_acid = FeaturesConfig(
-    name="citric acid", scaling_method=ScalingMethod.mean_std_scaler
-)
-residual_sugar = FeaturesConfig(
-    name="residual sugar", scaling_method=ScalingMethod.none_scaler
-)
-chlorides = FeaturesConfig(name="chlorides", scaling_method=ScalingMethod.none_scaler)
-free_sulfur_dioxide = FeaturesConfig(
-    name="free sulfur dioxide", scaling_method=ScalingMethod.none_scaler
-)
-total_sulfur_dioxide = FeaturesConfig(
-    name="total sulfur dioxide", scaling_method=ScalingMethod.none_scaler
-)
-density = FeaturesConfig(name="density", scaling_method=ScalingMethod.none_scaler)
-pH = FeaturesConfig(name="pH", scaling_method=ScalingMethod.none_scaler)
-sulphates = FeaturesConfig(name="sulphates", scaling_method=ScalingMethod.none_scaler)
-alcohol = FeaturesConfig(name="alcohol", scaling_method=ScalingMethod.none_scaler)
-fixed_acidity = FeaturesConfig(
-    name="fixed acidity", scaling_method=ScalingMethod.none_scaler
-)
-quality = TargetConfig(name="quality")
-
-knowledge_base_config = KnowledgeBaseConfig(
-    features=[volatile_acidity, citric_acid, residual_sugar],
-    target=[quality],
-)
-
 # Setup do modelo
-model_config = config.LinearRegressionConfig(set_intersection_with_zero=False)
+features = [
+    "fixed acidity",
+    "volatile acidity",
+    "citric acid",
+    "residual sugar",
+    "chlorides",
+    "free sulfur dioxide",
+    "total sulfur dioxide",
+    "density",
+    "pH",
+    "sulphates",
+    "alcohol",
+]
+target_column = "quality"
+
 
 # Hiperparametros
-tunning_config = config.LinearRegressionHyperparameters(
+random_state = 100
+
+model_setup = config.LinearRegressionConfig(set_intersection_with_zero=False)
+
+model_hyperparameters = config.LinearRegressionHyperparameters(
     fit_algorithm=config.FitAlgorithm.ordinary_least_squares,
 )
 
@@ -122,25 +97,20 @@ data_train = load_dataframe_from_parquet(
 # Regras de negócio
 # ==================================================================================
 
-# criando objeto modelo
-model = XLinearRegression(
-    kb_config=knowledge_base_config,
-    model_config=model_config,
-    tunning_config=tunning_config,
-    log=log,
-)
-
-
 log.title("Training model")
 
-model.fit(data=data_train, random_state=random_state, log=log)
+model = XLinearRegression(
+    setup=model_setup, hyperparameters=model_hyperparameters, log=log
+)
+model.fit(data=data_train, features_column_name=features, target_column=target_column)
 model.summary()
 
 log.title("Evaluating model")
 data_test = load_dataframe_from_parquet(file_path=input_dataset_test_file_path, log=log)
 
 data_test = model.predict(
-    data=data_test,
+    data_test=data_test,
+    features_column_name=features,
     y_predict_column_name="output_predict",
 )
 

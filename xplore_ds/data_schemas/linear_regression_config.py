@@ -12,7 +12,7 @@ class FitAlgorithm(str, Enum):
     generalized_least_squares = "generalized_least_squares"
 
 
-class LinearRegressionSetup(BaseModel):
+class LinearRegressionConfig(BaseModel):
 
     set_intersection_with_zero: bool = False
 

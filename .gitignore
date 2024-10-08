@@ -5,6 +5,10 @@
 *.csv
 *.parquet
 
+# Models files
+*.joblib
+*.pkl
+
 # Logs
 runs/
 

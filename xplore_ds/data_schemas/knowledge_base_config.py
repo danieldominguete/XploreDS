@@ -13,16 +13,17 @@ class ScalingMethod(str, Enum):
     mean_std_scaler = "mean_std_scaler"
 
 
-class FeaturesSetup(BaseModel):
+class FeaturesConfig(BaseModel):
     name: str
     scaling_method: ScalingMethod = ScalingMethod.none_scaler
 
 
-class TargetSetup(BaseModel):
+class TargetConfig(BaseModel):
     name: str
+    scaling_method: ScalingMethod = ScalingMethod.none_scaler
 
 
-class KnowledgeBaseSetup(BaseModel):
+class KnowledgeBaseConfig(BaseModel):
 
-    features: list[FeaturesSetup]
-    target: TargetSetup
+    features: list[FeaturesConfig]
+    target: list[TargetConfig]

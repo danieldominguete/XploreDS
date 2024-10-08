@@ -21,19 +21,33 @@ class XLinearRegression(XploreDSModel):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 
-    def train(self, data: pd, features_column_name: str, target_column: str) -> None:
+    def fit(
+        self,
+        data: pd,
+        random_state=100,
+        log: object = None,
+    ) -> None:
 
-        data_input = data[features_column_name]
+        # aplicando processamento de scaling de features
+        log.title("Features fit")
+
+        data = self.features_fit_transform(
+            data=data,
+        )
+
+        data_input = data[self.features_setup.get_features_names_scaled()]
 
         # incluindo coeficiente independente
-        if self.setup.set_intersection_with_zero == False:
+        if self.model_config.set_intersection_with_zero == False:
             data_input = sm.add_constant(data_input)
 
-        if self.hyperparameters.fit_algorithm == FitAlgorithm.ordinary_least_squares:
+        if self.tunning_config.fit_algorithm == FitAlgorithm.ordinary_least_squares:
+            target_column = self.target_setup.get_target_name()
             self.model = sm.OLS(data[target_column], data_input)
         elif (
-            self.hyperparameters.fit_algorithm == FitAlgorithm.generalized_least_squares
+            self.tunning_config.fit_algorithm == FitAlgorithm.generalized_least_squares
         ):
+            target_column = self.target_setup.get_target_name()
             self.model = sm.GLS(data[target_column], data_input)
         else:
             self.log.error("Fit algorithm not implemented")
@@ -44,21 +58,24 @@ class XLinearRegression(XploreDSModel):
 
         self.log.info(self.model.summary())
 
-    def predict(self, data_test, features_column_name, y_predict_column_name):
+    def predict(self, data, y_predict_column_name):
         """
         Calculate predictions for the given test data.
         """
 
-        # filtrado somente features
-        data_input = data_test[features_column_name]
+        data = self.features_transform(
+            data=data,
+        )
+
+        data_input = data[self.features_setup.get_features_names_scaled()]
 
         # incluindo coeficiente independente
-        if self.setup.set_intersection_with_zero == False:
+        if self.model_config.set_intersection_with_zero == False:
             data_input = sm.add_constant(data_input)
 
-        data_test[y_predict_column_name] = self.model.predict(data_input)
+        data[y_predict_column_name] = self.model.predict(data_input)
 
-        return data_test
+        return data
 
     def evaluate(self, X_test, y_test):
         """

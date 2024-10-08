@@ -24,14 +24,26 @@ def scaler_feature_fit(
         scaler = MinMaxScaler()
     else:
         scaler = None
+        return scaler
 
     scaler.fit(data[feature_column_name].values.reshape(-1, 1))
 
     return scaler
 
 
-def scaler_feature_transform(data: pd, feature_column_name: str, scaler, log: object):
+def scaler_feature_transform(
+    data: pd,
+    feature_column_name: str,
+    feature_column_name_scaled: str,
+    scaler,
+    log: object,
+):
 
-    data = scaler.transform(data[feature_column_name].values.reshape(-1, 1))
+    if scaler:
+        data[feature_column_name_scaled] = scaler.transform(
+            data[feature_column_name].values.reshape(-1, 1)
+        )
+    else:
+        data[feature_column_name_scaled] = data[feature_column_name]
 
     return data

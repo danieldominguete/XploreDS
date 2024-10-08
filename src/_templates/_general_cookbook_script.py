@@ -3,7 +3,8 @@ Xplore DS :: General cookbook script template
 """
 
 # Importando bibliotecas nativas
-import sys, os
+import sys 
+import os
 from pathlib import Path
 from dotenv import load_dotenv
 

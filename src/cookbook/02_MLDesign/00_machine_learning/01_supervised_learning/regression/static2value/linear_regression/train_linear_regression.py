@@ -23,6 +23,7 @@ from xplore_ds.data_schemas.knowledge_base_config import (
     FeaturesConfig,
     TargetConfig,
     ScalingMethod,
+    ApplicationType,
 )
 
 # ==================================================================================
@@ -87,7 +88,20 @@ fixed_acidity = FeaturesConfig(
 quality = TargetConfig(name="quality")
 
 knowledge_base_config = KnowledgeBaseConfig(
-    features=[volatile_acidity, citric_acid, residual_sugar],
+    application_type=ApplicationType.regression,
+    features=[
+        volatile_acidity,
+        citric_acid,
+        residual_sugar,
+        chlorides,
+        free_sulfur_dioxide,
+        total_sulfur_dioxide,
+        density,
+        pH,
+        sulphates,
+        alcohol,
+        fixed_acidity,
+    ],
     target=[quality],
 )
 
@@ -107,6 +121,9 @@ output_dataset_predict_file_path = (
 output_model_file_path = (
     "static/models/wine_quality/wine_quality_linear_regression.joblib"
 )
+view_charts = True
+save_charts = True
+results_folder = log.log_path
 
 # ==================================================================================
 # Carregando base de dados
@@ -127,21 +144,32 @@ model = XLinearRegression(
     kb_config=knowledge_base_config,
     model_config=model_config,
     tunning_config=tunning_config,
+    random_state=random_state,
     log=log,
 )
 
 
 log.title("Training model")
 
-model.fit(data=data_train, random_state=random_state, log=log)
+model.fit(data=data_train)
 model.summary()
 
-log.title("Evaluating model")
+log.title("Evaluating model with test data")
+
 data_test = load_dataframe_from_parquet(file_path=input_dataset_test_file_path, log=log)
 
 data_test = model.predict(
     data=data_test,
     y_predict_column_name="output_predict",
+)
+
+model.evaluate(
+    data=data_test,
+    y_predict_column_name="output_predict",
+    y_target_column_name=knowledge_base_config.target[0].name,
+    view_charts=view_charts,
+    save_charts=save_charts,
+    results_folder=results_folder,
 )
 
 # ==================================================================================

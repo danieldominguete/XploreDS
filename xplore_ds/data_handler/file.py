@@ -326,7 +326,7 @@ def save_dataframe_to_parquet(data: pd, file_path: str, log: object) -> None:
     data.to_parquet(file_path)
 
 
-def load_dataframe_from_parquet(file_path: str, log: object) -> pd:
+def load_dataframe_from_parquet(file_path: str, log: object = None) -> pd:
     """
     Load a pandas DataFrame from a Parquet file.
 

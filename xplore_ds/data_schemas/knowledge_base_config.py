@@ -1,9 +1,17 @@
 """
-Xplore DS :: Configuration data structure 
+Xplore DS :: Configuration data structure
 """
 
 from pydantic import BaseModel
 from enum import Enum
+
+
+class ApplicationType(str, Enum):
+
+    regression = "regression"
+    binary_classification = "binary_classification"
+    multiclass_classification = "multiclass_classification"
+    clustering = "clustering"
 
 
 class ScalingMethod(str, Enum):
@@ -25,5 +33,6 @@ class TargetConfig(BaseModel):
 
 class KnowledgeBaseConfig(BaseModel):
 
+    application_type: ApplicationType
     features: list[FeaturesConfig]
     target: list[TargetConfig]

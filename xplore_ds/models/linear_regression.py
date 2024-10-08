@@ -24,12 +24,10 @@ class XLinearRegression(XploreDSModel):
     def fit(
         self,
         data: pd,
-        random_state=100,
-        log: object = None,
     ) -> None:
 
         # aplicando processamento de scaling de features
-        log.title("Features fit")
+        self.log.title("Features fit")
 
         data = self.features_fit_transform(
             data=data,
@@ -76,9 +74,3 @@ class XLinearRegression(XploreDSModel):
         data[y_predict_column_name] = self.model.predict(data_input)
 
         return data
-
-    def evaluate(self, X_test, y_test):
-        """
-        Evaluate the model's performance on the test data.
-        """
-        pass

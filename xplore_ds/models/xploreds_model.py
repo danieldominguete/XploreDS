@@ -14,6 +14,7 @@ sys.path.append(str(project_folder))
 
 from xplore_ds.data_handler.file import create_folder
 from xplore_ds.features.xploreds_features import XploreDSFeatures
+from xplore_ds.models.evaluate_model import evaluate_regression
 
 
 class XploreDSModel(ABC):
@@ -26,6 +27,7 @@ class XploreDSModel(ABC):
         kb_config: BaseModel = None,
         model_config: BaseModel = None,
         tunning_config: BaseModel = None,
+        random_state: int = None,
         log: object = None,
     ) -> None:
 
@@ -34,6 +36,7 @@ class XploreDSModel(ABC):
         self.tunning_config = tunning_config
         self.log = log
         self.model = None
+        self.random_state = random_state
 
         self.features_setup = XploreDSFeatures(
             features_config=self.kb_config.features,
@@ -48,7 +51,7 @@ class XploreDSModel(ABC):
         super().__init__()
 
     @abstractmethod
-    def fit(self, data, random_state, log):
+    def fit(self, data):
         """
         Train machine learning model
         """
@@ -61,12 +64,29 @@ class XploreDSModel(ABC):
         """
         pass
 
-    @abstractmethod
-    def evaluate(self, data_eval, y_predict_column_name, y_target_column_name):
+    def evaluate(
+        self,
+        data,
+        y_predict_column_name,
+        y_target_column_name,
+        view_charts,
+        save_charts,
+        results_folder,
+    ):
         """
-        Evaluate the model's performance on the test data.
+        Evaluate the model's performance based on application type.
         """
-        pass
+
+        if self.kb_config.application_type == "regression":
+            evaluate_regression(
+                data=data,
+                y_predict_column_name=y_predict_column_name,
+                y_target_column_name=y_target_column_name,
+                view_charts=view_charts,
+                save_charts=save_charts,
+                results_folder=results_folder,
+                log=self.log,
+            )
 
     def save(self, path):
         """

@@ -1,5 +1,5 @@
 """
-Xplore DS :: Configuration data structure 
+Xplore DS :: Configuration data structure
 """
 
 from pydantic import BaseModel

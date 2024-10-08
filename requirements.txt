@@ -4,6 +4,8 @@ scikit_learn==1.5.2
 pyarrow==17.0.0
 statsmodels==0.14.4
 pydantic==2.9.2
+plotly==5.24.1
+kaleido==0.2.1
 black
 flake8
 python-dotenv

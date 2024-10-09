@@ -14,7 +14,11 @@ sys.path.append(str(project_folder))
 
 from xplore_ds.data_handler.file import create_folder
 from xplore_ds.features.xploreds_features import XploreDSFeatures
-from xplore_ds.models.evaluate_model import evaluate_regression
+from xplore_ds.models.evaluate_model import (
+    evaluate_regression,
+    evaluate_binary_classification,
+)
+from xplore_ds.data_schemas.knowledge_base_config import ApplicationType
 
 
 class XploreDSModel(ABC):
@@ -77,7 +81,7 @@ class XploreDSModel(ABC):
         Evaluate the model's performance based on application type.
         """
 
-        if self.kb_config.application_type == "regression":
+        if self.kb_config.application_type == ApplicationType.regression:
             evaluate_regression(
                 data=data,
                 y_predict_column_name=y_predict_column_name,
@@ -87,6 +91,18 @@ class XploreDSModel(ABC):
                 results_folder=results_folder,
                 log=self.log,
             )
+        elif self.kb_config.application_type == ApplicationType.binary_classification:
+            evaluate_binary_classification(
+                data=data,
+                y_predict_column_name=y_predict_column_name,
+                y_target_column_name=y_target_column_name,
+                view_charts=view_charts,
+                save_charts=save_charts,
+                results_folder=results_folder,
+                log=self.log,
+            )
+        else:
+            self.log.error("Application type not supported")
 
     def save(self, path):
         """
@@ -98,12 +114,18 @@ class XploreDSModel(ABC):
 
         joblib.dump(self, path)
 
+        self.log.info("Model saved sucessfully in " + path)
+
     @staticmethod
-    def load(path):
+    def load(path, log):
         """
         Load a trained model from a file.
         """
-        return joblib.load(path)
+        model = joblib.load(path)
+
+        log.info("Model loaded sucessfully from " + path)
+
+        return model
 
     @abstractmethod
     def summary(self):

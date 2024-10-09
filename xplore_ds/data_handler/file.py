@@ -339,16 +339,8 @@ def load_dataframe_from_parquet(file_path: str, log: object = None) -> pd:
     Returns:
         pandas.DataFrame: The DataFrame loaded from the Parquet file.
 
-    Raises:
-        IOError: If there's an error opening or writing to the file.
-            The specific exception type depends on what went wrong
-            (e.g., FileNotFoundError, PermissionError).
-
-    Note:
-        - This function uses the pandas read_parquet method to load the DataFrame.
-        - It's particularly useful for large datasets where the Parquet format
-          provides efficient compression and columnar storage.
     """
-    log.info("Loading dataframe from parquet file: " + file_path)
+    if log:
+        log.info("Loading dataframe from parquet file: " + file_path)
 
     return pd.read_parquet(file_path)

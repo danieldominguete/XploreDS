@@ -23,11 +23,28 @@ def save_chart_file(fig: object, path: str = None) -> None:
     fig.write_image(path)
 
 
+# https://plotly.com/python-api-reference/generated/plotly.express.scatter.html
 def plot_scatter_2d(
-    x, y, view_chart: bool = True, save_chart: bool = False, file_path_image: str = None
+    data,
+    x_col_name,
+    y_col_name,
+    title: str = "",
+    marginal_plot: bool = True,
+    view_chart: bool = True,
+    save_chart: bool = False,
+    file_path_image: str = None,
 ):
-
-    fig = px.scatter(x=x, y=y)
+    if marginal_plot:
+        fig = px.scatter(
+            data_frame=data,
+            x=x_col_name,
+            y=y_col_name,
+            title=title,
+            marginal_x="histogram",
+            marginal_y="histogram",
+        )
+    else:
+        fig = px.scatter(data_frame=data, x=x_col_name, y=y_col_name, title=title)
 
     if save_chart:
         save_chart_file(fig, file_path_image)

@@ -1,12 +1,13 @@
 """
-Xplore DS :: Training Linear Regression Model
+Xplore DS :: Training Logistic Regression Model
 """
 
 # Importando bibliotecas nativas
-import sys, os
+import sys
+import os
 from pathlib import Path
 from dotenv import load_dotenv
-
+import numpy as np
 
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib
 project_folder = Path(__file__).resolve().parents[8]
@@ -15,9 +16,17 @@ sys.path.append(str(project_folder))
 # Importando biblioteca Xplore DS
 from xplore_ds.environment.environment import XploreDSLocalhost
 from xplore_ds.environment.logging import XploreDSLogging
-from xplore_ds.data_handler.file import load_dataframe_from_parquet
-from xplore_ds.models.linear_regression import XLinearRegression
-import xplore_ds.data_schemas.linear_regression_config as config
+from xplore_ds.data_handler.file import (
+    load_dataframe_from_parquet,
+    save_dataframe_to_parquet,
+)
+from xplore_ds.models.logistic_regression import XLogisticRegression
+from xplore_ds.data_schemas.logistic_regression_config import (
+    LogisticRegressionConfig,
+    LogisticRegressionHyperparameters,
+    Topology,
+    FitAlgorithm,
+)
 from xplore_ds.data_schemas.knowledge_base_config import (
     KnowledgeBaseConfig,
     FeaturesConfig,
@@ -26,8 +35,13 @@ from xplore_ds.data_schemas.knowledge_base_config import (
     ApplicationType,
 )
 
+# **********************************************************************************
+# Parametrizacao do script
+# **********************************************************************************
+
 # ==================================================================================
-# Setup do script
+# Setup de ambiente
+# ==================================================================================
 
 script_name = os.path.basename(__file__)
 
@@ -41,16 +55,19 @@ env = XploreDSLocalhost(run_folder=project_folder)
 log = XploreDSLogging(project_root=project_folder, script_name=script_name)
 log.init_run()
 
+# ==================================================================================
+# Parametrizacao de execucao
+# ==================================================================================
+
+log.title("Script execution setup")
+
+# ----------------------------------------------------------------------------------
 # Seeds
 random_state = 100
 
-# ==================================================================================
-# Parametrizacao do script
-# ==================================================================================
-
-log.title("Script setup")
-
+# ----------------------------------------------------------------------------------
 # Configuracao de dados de entrada
+
 input_dataset_train_file_path = (
     "data/projects/stage/wine_quality/wine_quality_train.parquet"
 )
@@ -58,9 +75,8 @@ input_dataset_test_file_path = (
     "data/projects/stage/wine_quality/wine_quality_test.parquet"
 )
 
-# Setup da base de conhecimento
-
-# configuracao de features e target
+# ----------------------------------------------------------------------------------
+# Configuracao de features e target
 
 volatile_acidity = FeaturesConfig(
     name="volatile acidity", scaling_method=ScalingMethod.min_max_scaler
@@ -85,10 +101,13 @@ alcohol = FeaturesConfig(name="alcohol", scaling_method=ScalingMethod.none_scale
 fixed_acidity = FeaturesConfig(
     name="fixed acidity", scaling_method=ScalingMethod.none_scaler
 )
-quality = TargetConfig(name="quality")
+target_label = TargetConfig(name="target_label")
+
+# ----------------------------------------------------------------------------------
+# Configurando a base de conhecimento "ground thruth" para tunning do modelo
 
 knowledge_base_config = KnowledgeBaseConfig(
-    application_type=ApplicationType.regression,
+    application_type=ApplicationType.binary_classification,
     features=[
         volatile_acidity,
         citric_acid,
@@ -102,28 +121,44 @@ knowledge_base_config = KnowledgeBaseConfig(
         alcohol,
         fixed_acidity,
     ],
-    target=[quality],
+    target=[target_label],
 )
 
+# ----------------------------------------------------------------------------------
 # Setup do modelo
-model_config = config.LinearRegressionConfig(set_intersection_with_zero=False)
 
-# Hiperparametros
-tunning_config = config.LinearRegressionHyperparameters(
-    fit_algorithm=config.FitAlgorithm.ordinary_least_squares,
+model_config = LogisticRegressionConfig(
+    set_intersection_with_zero=False, topology=Topology.logit
 )
 
-# Configuracao de dados de saida
-output_folder = "output"
-output_dataset_predict_file_path = (
-    "data/projects/prod/wine_quality/wine_quality_train_predict.parquet"
+# ----------------------------------------------------------------------------------
+# Hiperparametros
+
+tunning_config = LogisticRegressionHyperparameters(
+    fit_algorithm=FitAlgorithm.maximum_likelihood,
+)
+
+# ----------------------------------------------------------------------------------
+# Configuracao de artefatos de saida
+
+results_folder = log.log_path
+
+output_dataset_train_predict_file_path = (
+    results_folder + "data/wine_quality_train_classification_predict.parquet"
+)
+output_dataset_test_predict_file_path = (
+    results_folder + "data/wine_quality_test_classification_predict.parquet"
 )
 output_model_file_path = (
-    "static/models/wine_quality/wine_quality_linear_regression.joblib"
+    results_folder + "models/wine_quality_logistic_regression.joblib"
 )
+
 view_charts = True
 save_charts = True
-results_folder = log.log_path
+
+# **********************************************************************************
+# Execucao do script
+# **********************************************************************************
 
 # ==================================================================================
 # Carregando base de dados
@@ -135,12 +170,21 @@ data_train = load_dataframe_from_parquet(
     file_path=input_dataset_train_file_path, log=log
 )
 
+# marcacao para classificador binario
+data_train["target_label"] = np.where(data_train["quality"] <= 5, "bad", "good")
+
 # ==================================================================================
 # Regras de negócio
 # ==================================================================================
 
-# criando objeto modelo
-model = XLinearRegression(
+log.title("Training model")
+
+# ----------------------------------------------------------------------------------
+# Criando topologia do modelo
+
+log.info("Creating model topology...")
+
+model = XLogisticRegression(
     kb_config=knowledge_base_config,
     model_config=model_config,
     tunning_config=tunning_config,
@@ -148,15 +192,51 @@ model = XLinearRegression(
     log=log,
 )
 
+# ----------------------------------------------------------------------------------
+# Realizando do tunning do modelo
 
 log.title("Training model")
 
 model.fit(data=data_train)
+
+# ----------------------------------------------------------------------------------
+# Apresentando resumo do tunning do modelo
+log.title("Summary of tunning")
+
 model.summary()
+
+# ----------------------------------------------------------------------------------
+# Avaliando performance do modelo na base de treinamento
+
+log.title("Evaluating model with training data")
+
+data_train = load_dataframe_from_parquet(
+    file_path=input_dataset_train_file_path, log=log
+)
+data_train["target_label"] = np.where(data_train["quality"] <= 5, "bad", "good")
+
+data_train = model.predict(
+    data=data_train,
+    y_predict_column_name="output_predict",
+)
+
+model.evaluate(
+    data=data_train,
+    y_predict_column_name="output_predict",
+    y_target_column_name=knowledge_base_config.target[0].name,
+    view_charts=view_charts,
+    save_charts=save_charts,
+    results_folder=results_folder,
+)
+
+
+# ----------------------------------------------------------------------------------
+# Avaliando performance do modelo na base de teste
 
 log.title("Evaluating model with test data")
 
 data_test = load_dataframe_from_parquet(file_path=input_dataset_test_file_path, log=log)
+data_test["target_label"] = np.where(data_test["quality"] <= 5, "bad", "good")
 
 data_test = model.predict(
     data=data_test,
@@ -177,7 +257,20 @@ model.evaluate(
 # ==================================================================================
 
 log.title("Saving output artifacts")
+
 model.save(path=output_model_file_path)
+
+save_dataframe_to_parquet(
+    data=data_train,
+    file_path=output_dataset_train_predict_file_path,
+    log=log,
+)
+
+save_dataframe_to_parquet(
+    data=data_test,
+    file_path=output_dataset_test_predict_file_path,
+    log=log,
+)
 
 # ==================================================================================
 # Encerramento do script

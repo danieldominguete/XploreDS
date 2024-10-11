@@ -1,5 +1,5 @@
 """
-Xplore DS :: Training Logistic Regression Model
+Xplore DS :: Training Logistic Regression Model for Binary Classification
 """
 
 # Importando bibliotecas nativas
@@ -29,7 +29,7 @@ from xplore_ds.data_schemas.logistic_regression_config import (
 )
 from xplore_ds.data_schemas.model_io_config import (
     ModelIOConfig,
-    VariableConfig,
+    VariableIOConfig,
     ScalingMethod,
     ApplicationType,
 )
@@ -65,46 +65,47 @@ log.title("Script execution setup")
 random_state = 100
 
 # ----------------------------------------------------------------------------------
-# Configuracao de dados de entrada
+# Configuracao de master table de entrada
 
 input_dataset_train_file_path = (
-    "data/projects/stage/wine_quality/winequality-red-processed.parquet"
+    "data/projects/stage/wine_quality/winequality-red-processed-train.parquet"
 )
 input_dataset_test_file_path = (
-    "data/projects/stage/wine_quality/winequality-red-processed.parquet"
+    "data/projects/stage/wine_quality/winequality-red-processed-test.parquet"
 )
 
 # ----------------------------------------------------------------------------------
-# Configuracao de features e target
+# Configuracao de variaveis de I/O do modelo
 
-fixed_acidity = VariableConfig(
+fixed_acidity = VariableIOConfig(
     name="fixed acidity", scaling_method=ScalingMethod.none_scaler
 )
-volatile_acidity = VariableConfig(
+volatile_acidity = VariableIOConfig(
     name="volatile acidity", scaling_method=ScalingMethod.min_max_scaler
 )
-citric_acid = VariableConfig(
+citric_acid = VariableIOConfig(
     name="citric acid", scaling_method=ScalingMethod.mean_std_scaler
 )
-residual_sugar = VariableConfig(
+residual_sugar = VariableIOConfig(
     name="residual sugar", scaling_method=ScalingMethod.none_scaler
 )
-chlorides = VariableConfig(name="chlorides", scaling_method=ScalingMethod.none_scaler)
-free_sulfur_dioxide = VariableConfig(
+chlorides = VariableIOConfig(name="chlorides", scaling_method=ScalingMethod.none_scaler)
+free_sulfur_dioxide = VariableIOConfig(
     name="free sulfur dioxide", scaling_method=ScalingMethod.none_scaler
 )
-total_sulfur_dioxide = VariableConfig(
+total_sulfur_dioxide = VariableIOConfig(
     name="total sulfur dioxide", scaling_method=ScalingMethod.none_scaler
 )
-density = VariableConfig(name="density", scaling_method=ScalingMethod.none_scaler)
-pH_label_acid = VariableConfig(
+density = VariableIOConfig(name="density", scaling_method=ScalingMethod.none_scaler)
+pH_label_acid = VariableIOConfig(
     name="pH_label_acid",
     scaling_method=ScalingMethod.none_scaler,
 )
-sulphates = VariableConfig(name="sulphates", scaling_method=ScalingMethod.none_scaler)
-alcohol = VariableConfig(name="alcohol", scaling_method=ScalingMethod.none_scaler)
+sulphates = VariableIOConfig(name="sulphates", scaling_method=ScalingMethod.none_scaler)
+alcohol = VariableIOConfig(name="alcohol", scaling_method=ScalingMethod.none_scaler)
 
-quality_label_bad = VariableConfig(name="quality_label_bad")
+quality_label_bad = VariableIOConfig(name="quality_label_bad")
+quality_label = VariableIOConfig(name="quality_label")
 
 # ----------------------------------------------------------------------------------
 # Configurando a base de conhecimento "ground thruth" para tunning do modelo
@@ -124,7 +125,8 @@ model_io_config = ModelIOConfig(
         alcohol,
         fixed_acidity,
     ],
-    target=[quality_label_bad],
+    target_numerical=[quality_label_bad],
+    target_categorical=[quality_label],
 )
 
 # ----------------------------------------------------------------------------------
@@ -216,19 +218,19 @@ data_train = load_dataframe_from_parquet(
 
 data_train = model.predict(
     data=data_train,
-    y_predict_column_name="output_predict_value",
+    y_predict_column_name_output="output_predict_value",
 )
 
 data_train = model.predict_class(
     data=data_train,
     trigger=0.5,
-    y_predict_class_column_name="output_predict_class",
+    y_predict_class_column_name_output="output_predict_class",
 )
 
 model.evaluate(
     data=data_train,
     y_predict_column_name="output_predict_value",
-    y_target_column_name=model_io_config.target[0].name,
+    y_target_column_name=model_io_config.target_numerical[0].name,
     view_charts=view_charts,
     save_charts=save_charts,
     results_folder=results_folder,
@@ -245,7 +247,7 @@ data_test["target_label"] = np.where(data_test["quality"] <= 5, "bad", "good")
 
 data_test = model.predict(
     data=data_test,
-    y_predict_column_name="output_predict",
+    y_predict_column_name_output="output_predict",
 )
 
 model.evaluate(

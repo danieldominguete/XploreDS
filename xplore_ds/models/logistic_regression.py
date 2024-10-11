@@ -59,7 +59,7 @@ class XLogisticRegression(XploreDSModel):
 
         self.log.info(self.model.summary())
 
-    def predict(self, data, y_predict_column_name):
+    def predict(self, data, y_predict_column_name_output):
         """
         Calculate predictions for the given test data.
         """
@@ -74,21 +74,8 @@ class XLogisticRegression(XploreDSModel):
         if self.model_config.set_intersection_with_zero == False:
             data_input = sm.add_constant(data_input)
 
-        data[y_predict_column_name] = self.model.predict(data_input)
+        data[y_predict_column_name_output] = self.model.predict(data_input)
 
         return data
 
-    def predict_class(self, data, trigger, y_predict_class_column_name):
-        """
-        Calculate predicted class for the given test data.
-        """
-
-        self.predict(data, "_predicted_value")
-
-        data[y_predict_class_column_name] = data["_predicted_value"].apply(
-            lambda x: 1 if x > trigger else 0
-        )
-
-        data = data.drop(columns=["_predicted_value"])
-
-        return data
+    

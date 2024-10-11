@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 import numpy as np
+from sklearn.model_selection import train_test_split
 
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib
 project_folder = Path(__file__).resolve().parents[4]
@@ -113,13 +114,24 @@ dataset_config = DatasetConfig(
 )
 
 # ----------------------------------------------------------------------------------
+
+# Selecao dos subsets
+proportion_test_samples = 0.1
+shuffle = False
+random_state = 100
+
+# ----------------------------------------------------------------------------------
 # Configuracao de artefatos de saida
 
 results_folder = log.log_path
 
-output_dataset_file_path = (
-    results_folder
-    + "winequality-red-processed.parquet"
+output_dataset_file_path = results_folder + "winequality-red-processed.parquet"
+
+output_dataset_train_file_path = (
+    results_folder + "winequality-red-processed-train.parquet"
+)
+output_dataset_test_file_path = (
+    results_folder + "winequality-red-processed-test.parquet"
 )
 
 # **********************************************************************************
@@ -158,6 +170,17 @@ for variable in dataset_config.variables:
         log=log,
     )
 
+# ==================================================================================
+# Separando datasets
+# ==================================================================================
+
+# Realizando o split dos datasets
+data_train, data_test = train_test_split(
+    data,
+    test_size=proportion_test_samples,
+    shuffle=shuffle,
+    random_state=random_state,
+)
 
 # ==================================================================================
 # Salvando artefatos de saida
@@ -171,6 +194,17 @@ save_dataframe_to_parquet(
     log=log,
 )
 
+save_dataframe_to_parquet(
+    data=data_train,
+    file_path=output_dataset_train_file_path,
+    log=log,
+)
+
+save_dataframe_to_parquet(
+    data=data_test,
+    file_path=output_dataset_test_file_path,
+    log=log,
+)
 
 # ==================================================================================
 # Encerramento do script

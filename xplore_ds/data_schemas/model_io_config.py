@@ -14,13 +14,6 @@ class ApplicationType(str, Enum):
     clustering = "clustering"
 
 
-class VariableType(str, Enum):
-
-    numerical = "numerical"
-    categorical = "categorical"
-    textual = "textual"
-
-
 class ScalingMethod(str, Enum):
 
     none_scaler = "none_scaler"
@@ -28,7 +21,7 @@ class ScalingMethod(str, Enum):
     mean_std_scaler = "mean_std_scaler"
 
 
-class VariableConfig(BaseModel):
+class VariableIOConfig(BaseModel):
     name: str
     scaling_method: ScalingMethod = ScalingMethod.none_scaler
 
@@ -36,5 +29,7 @@ class VariableConfig(BaseModel):
 class ModelIOConfig(BaseModel):
 
     application_type: ApplicationType
-    features: list[VariableConfig]
-    target: list[VariableConfig]
+    features: list[VariableIOConfig] = []
+    target_numerical: list[VariableIOConfig] = []
+    target_categorical: list[VariableIOConfig] = []
+    target_textual: list[VariableIOConfig] = []

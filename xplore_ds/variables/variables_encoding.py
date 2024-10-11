@@ -19,7 +19,7 @@ import sys, os
 project_folder = Path(__file__).resolve().parents[2]
 sys.path.append(str(project_folder))
 
-from xplore_ds.data_schemas.model_io_config import EncodingMethod
+from xplore_ds.data_schemas.dataset_config import EncodingMethod
 
 
 def encoder_variable_fit(

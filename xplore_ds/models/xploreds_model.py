@@ -7,6 +7,7 @@ import joblib
 from pathlib import Path
 import sys, os
 from pydantic import BaseModel
+import numpy as np
 
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib
 project_folder = Path(__file__).resolve().parents[2]
@@ -45,7 +46,7 @@ class XploreDSModel(ABC):
         # configurando objeto de io variables
         self.model_io_setup = XploreDSModelIO(
             features_config=self.model_io_config.features,
-            target_config=self.model_io_config.target,
+            target_config=self.model_io_config.target_numerical,
             log=self.log,
         )
 
@@ -59,11 +60,46 @@ class XploreDSModel(ABC):
         pass
 
     @abstractmethod
-    def predict(self, data, y_predict_column_name):
+    def predict(self, data, y_predict_column_name_output):
         """
         Calculate predictions for the given test data.
         """
         pass
+
+    def predict_class(
+        self,
+        data,
+        trigger,
+        y_predict_class_column_name_output,
+        int_to_class_map: dict = None,
+    ):
+        """
+        Calculate predicted class for the given test data.
+        """
+
+        if (
+            self.model_io_config.application_type
+            == ApplicationType.binary_classification
+        ):
+
+            self.predict(data, "_predicted_value")
+
+            data[y_predict_class_column_name_output] = np.where(
+                data["_predicted_value"] > trigger, 1, 0
+            )
+
+            if int_to_class_map is not None:
+                data[y_predict_class_column_name_output] = data[
+                    y_predict_class_column_name_output
+                ].map(int_to_class_map)
+
+            data = data.drop(columns=["_predicted_value"])
+
+            return data
+
+        else:
+            self.log.error("Application type not supported")
+            return None
 
     def evaluate(
         self,
@@ -98,6 +134,8 @@ class XploreDSModel(ABC):
                 data=data,
                 y_predict_column_name=y_predict_column_name,
                 y_target_column_name=y_target_column_name,
+                y_predict_class_column_name=y_predict_class_column_name,
+                y_target_class_column_name=y_target_class_column_name,
                 view_charts=view_charts,
                 save_charts=save_charts,
                 results_folder=results_folder,

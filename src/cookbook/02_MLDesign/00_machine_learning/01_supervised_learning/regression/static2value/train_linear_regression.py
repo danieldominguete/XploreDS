@@ -27,7 +27,7 @@ from xplore_ds.data_schemas.linear_regression_config import (
 )
 from xplore_ds.data_schemas.model_io_config import (
     ModelIOConfig,
-    VariableConfig,
+    VariableIOConfig,
     TargetConfig,
     ScalingMethod,
     ApplicationType,
@@ -76,27 +76,27 @@ input_dataset_test_file_path = (
 # ----------------------------------------------------------------------------------
 # Configuracao de features e target
 
-volatile_acidity = VariableConfig(
+volatile_acidity = VariableIOConfig(
     name="volatile acidity", scaling_method=ScalingMethod.min_max_scaler
 )
-citric_acid = VariableConfig(
+citric_acid = VariableIOConfig(
     name="citric acid", scaling_method=ScalingMethod.mean_std_scaler
 )
-residual_sugar = VariableConfig(
+residual_sugar = VariableIOConfig(
     name="residual sugar", scaling_method=ScalingMethod.none_scaler
 )
-chlorides = VariableConfig(name="chlorides", scaling_method=ScalingMethod.none_scaler)
-free_sulfur_dioxide = VariableConfig(
+chlorides = VariableIOConfig(name="chlorides", scaling_method=ScalingMethod.none_scaler)
+free_sulfur_dioxide = VariableIOConfig(
     name="free sulfur dioxide", scaling_method=ScalingMethod.none_scaler
 )
-total_sulfur_dioxide = VariableConfig(
+total_sulfur_dioxide = VariableIOConfig(
     name="total sulfur dioxide", scaling_method=ScalingMethod.none_scaler
 )
-density = VariableConfig(name="density", scaling_method=ScalingMethod.none_scaler)
-pH = VariableConfig(name="pH", scaling_method=ScalingMethod.none_scaler)
-sulphates = VariableConfig(name="sulphates", scaling_method=ScalingMethod.none_scaler)
-alcohol = VariableConfig(name="alcohol", scaling_method=ScalingMethod.none_scaler)
-fixed_acidity = VariableConfig(
+density = VariableIOConfig(name="density", scaling_method=ScalingMethod.none_scaler)
+pH = VariableIOConfig(name="pH", scaling_method=ScalingMethod.none_scaler)
+sulphates = VariableIOConfig(name="sulphates", scaling_method=ScalingMethod.none_scaler)
+alcohol = VariableIOConfig(name="alcohol", scaling_method=ScalingMethod.none_scaler)
+fixed_acidity = VariableIOConfig(
     name="fixed acidity", scaling_method=ScalingMethod.none_scaler
 )
 quality = TargetConfig(name="quality")

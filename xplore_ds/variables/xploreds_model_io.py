@@ -15,7 +15,7 @@ sys.path.append(str(project_folder))
 from xplore_ds.data_handler.file import create_folder
 from xplore_ds.data_schemas.model_io_config import (
     ScalingMethod,
-    VariableConfig,
+    VariableIOConfig,
 )
 from xplore_ds.variables.variables_scaling import (
     scaler_variable_fit,
@@ -84,8 +84,8 @@ class XploreDSModelIO:
 
     def __init__(
         self,
-        features_config: VariableConfig = None,
-        target_config: VariableConfig = None,
+        features_config: VariableIOConfig = None,
+        target_config: VariableIOConfig = None,
         log: object = None,
     ) -> None:
 

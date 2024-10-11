@@ -29,7 +29,7 @@ class XLinearRegression(XploreDSModel):
         # aplicando processamento de scaling de features
         self.log.title("Features fit")
 
-        data = self.features_fit_transform(
+        data = self.model_io_fit_transform(
             data=data,
         )
 

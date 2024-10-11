@@ -11,11 +11,11 @@ import sys, os
 project_folder = Path(__file__).resolve().parents[2]
 sys.path.append(str(project_folder))
 
-from xplore_ds.data_schemas.knowledge_base_config import ScalingMethod
+from xplore_ds.data_schemas.model_io_config import ScalingMethod
 
 
-def scaler_feature_fit(
-    data: pd, feature_column_name: str, scale_method: ScalingMethod, log: object
+def scaler_variable_fit(
+    data: pd, variable_column_name: str, scale_method: ScalingMethod, log: object
 ):
 
     if scale_method == ScalingMethod.mean_std_scaler:
@@ -26,24 +26,23 @@ def scaler_feature_fit(
         scaler = None
         return scaler
 
-    scaler.fit(data[feature_column_name].values.reshape(-1, 1))
+    scaler.fit(data[variable_column_name].values.reshape(-1, 1))
 
     return scaler
 
 
-def scaler_feature_transform(
+def scaler_variable_transform(
     data: pd,
     feature_column_name: str,
-    feature_column_name_scaled: str,
     scaler,
     log: object,
 ):
 
     if scaler:
-        data[feature_column_name_scaled] = scaler.transform(
+        data[feature_column_name + "_scaled"] = scaler.transform(
             data[feature_column_name].values.reshape(-1, 1)
         )
     else:
-        data[feature_column_name_scaled] = data[feature_column_name]
+        data[feature_column_name + "_scaled"] = data[feature_column_name]
 
-    return data
+    return data, feature_column_name + "_scaled"

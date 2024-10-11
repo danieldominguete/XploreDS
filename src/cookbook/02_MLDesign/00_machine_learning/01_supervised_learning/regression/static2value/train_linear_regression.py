@@ -25,9 +25,9 @@ from xplore_ds.data_schemas.linear_regression_config import (
     LinearRegressionHyperparameters,
     FitAlgorithm,
 )
-from xplore_ds.data_schemas.knowledge_base_config import (
-    KnowledgeBaseConfig,
-    FeaturesConfig,
+from xplore_ds.data_schemas.model_io_config import (
+    ModelIOConfig,
+    VariableConfig,
     TargetConfig,
     ScalingMethod,
     ApplicationType,
@@ -76,27 +76,27 @@ input_dataset_test_file_path = (
 # ----------------------------------------------------------------------------------
 # Configuracao de features e target
 
-volatile_acidity = FeaturesConfig(
+volatile_acidity = VariableConfig(
     name="volatile acidity", scaling_method=ScalingMethod.min_max_scaler
 )
-citric_acid = FeaturesConfig(
+citric_acid = VariableConfig(
     name="citric acid", scaling_method=ScalingMethod.mean_std_scaler
 )
-residual_sugar = FeaturesConfig(
+residual_sugar = VariableConfig(
     name="residual sugar", scaling_method=ScalingMethod.none_scaler
 )
-chlorides = FeaturesConfig(name="chlorides", scaling_method=ScalingMethod.none_scaler)
-free_sulfur_dioxide = FeaturesConfig(
+chlorides = VariableConfig(name="chlorides", scaling_method=ScalingMethod.none_scaler)
+free_sulfur_dioxide = VariableConfig(
     name="free sulfur dioxide", scaling_method=ScalingMethod.none_scaler
 )
-total_sulfur_dioxide = FeaturesConfig(
+total_sulfur_dioxide = VariableConfig(
     name="total sulfur dioxide", scaling_method=ScalingMethod.none_scaler
 )
-density = FeaturesConfig(name="density", scaling_method=ScalingMethod.none_scaler)
-pH = FeaturesConfig(name="pH", scaling_method=ScalingMethod.none_scaler)
-sulphates = FeaturesConfig(name="sulphates", scaling_method=ScalingMethod.none_scaler)
-alcohol = FeaturesConfig(name="alcohol", scaling_method=ScalingMethod.none_scaler)
-fixed_acidity = FeaturesConfig(
+density = VariableConfig(name="density", scaling_method=ScalingMethod.none_scaler)
+pH = VariableConfig(name="pH", scaling_method=ScalingMethod.none_scaler)
+sulphates = VariableConfig(name="sulphates", scaling_method=ScalingMethod.none_scaler)
+alcohol = VariableConfig(name="alcohol", scaling_method=ScalingMethod.none_scaler)
+fixed_acidity = VariableConfig(
     name="fixed acidity", scaling_method=ScalingMethod.none_scaler
 )
 quality = TargetConfig(name="quality")
@@ -104,7 +104,7 @@ quality = TargetConfig(name="quality")
 # ----------------------------------------------------------------------------------
 # Configurando a base de conhecimento "ground thruth" para tunning do modelo
 
-knowledge_base_config = KnowledgeBaseConfig(
+knowledge_base_config = ModelIOConfig(
     application_type=ApplicationType.regression,
     features=[
         volatile_acidity,

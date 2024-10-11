@@ -13,12 +13,12 @@ project_folder = Path(__file__).resolve().parents[2]
 sys.path.append(str(project_folder))
 
 from xplore_ds.data_handler.file import create_folder
-from xplore_ds.features.xploreds_features import XploreDSFeatures
+from xplore_ds.variables.xploreds_model_io import XploreDSModelIO
 from xplore_ds.models.evaluate_model import (
     evaluate_regression,
     evaluate_binary_classification,
 )
-from xplore_ds.data_schemas.knowledge_base_config import ApplicationType
+from xplore_ds.data_schemas.model_io_config import ApplicationType, ModelIOConfig
 
 
 class XploreDSModel(ABC):
@@ -28,27 +28,24 @@ class XploreDSModel(ABC):
 
     def __init__(
         self,
-        kb_config: BaseModel = None,
+        model_io_config: ModelIOConfig = None,
         model_config: BaseModel = None,
         tunning_config: BaseModel = None,
         random_state: int = None,
         log: object = None,
     ) -> None:
 
-        self.kb_config = kb_config
+        self.model_io_config = model_io_config
         self.model_config = model_config
         self.tunning_config = tunning_config
         self.log = log
         self.model = None
         self.random_state = random_state
 
-        self.features_setup = XploreDSFeatures(
-            features_config=self.kb_config.features,
-            log=self.log,
-        )
-
-        self.target_setup = XploreDSFeatures(
-            features_config=self.kb_config.target,
+        # configurando objeto de io variables
+        self.model_io_setup = XploreDSModelIO(
+            features_config=self.model_io_config.features,
+            target_config=self.model_io_config.target,
             log=self.log,
         )
 
@@ -73,15 +70,17 @@ class XploreDSModel(ABC):
         data,
         y_predict_column_name,
         y_target_column_name,
-        view_charts,
-        save_charts,
-        results_folder,
+        y_predict_class_column_name=None,
+        y_target_class_column_name=None,
+        view_charts=True,
+        save_charts=True,
+        results_folder=None,
     ):
         """
         Evaluate the model's performance based on application type.
         """
 
-        if self.kb_config.application_type == ApplicationType.regression:
+        if self.model_io_config.application_type == ApplicationType.regression:
             evaluate_regression(
                 data=data,
                 y_predict_column_name=y_predict_column_name,
@@ -91,7 +90,10 @@ class XploreDSModel(ABC):
                 results_folder=results_folder,
                 log=self.log,
             )
-        elif self.kb_config.application_type == ApplicationType.binary_classification:
+        elif (
+            self.model_io_config.application_type
+            == ApplicationType.binary_classification
+        ):
             evaluate_binary_classification(
                 data=data,
                 y_predict_column_name=y_predict_column_name,
@@ -134,41 +136,24 @@ class XploreDSModel(ABC):
         """
         pass
 
-    def features_fit(self, data):
-        """
-        Scale the features of the given data using the trained scaler.
-        """
-
-        self.features_setup.fit(
-            data=data,
-            log=self.log,
-        )
-
-        return data
-
     def features_transform(self, data):
         """
         Scale the features of the given data using the trained scaler.
         """
 
-        self.features_setup.transform(
+        self.model_io_setup.transform(
             data=data,
             log=self.log,
         )
 
         return data
 
-    def features_fit_transform(self, data):
+    def model_io_fit_transform(self, data):
         """
-        Scale the features of the given data using the trained scaler.
+        Encode and scale the features and target of the given data.
         """
 
-        self.features_setup.fit(
-            data=data,
-            log=self.log,
-        )
-
-        self.features_setup.transform(
+        data = self.model_io_setup.fit_transform(
             data=data,
             log=self.log,
         )

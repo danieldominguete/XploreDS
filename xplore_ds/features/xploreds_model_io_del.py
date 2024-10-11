@@ -13,16 +13,16 @@ project_folder = Path(__file__).resolve().parents[2]
 sys.path.append(str(project_folder))
 
 from xplore_ds.data_handler.file import create_folder
-from xplore_ds.data_schemas.knowledge_base_config import ScalingMethod, FeaturesConfig
+from xplore_ds.data_schemas.model_io_config import ScalingMethod, VariableConfig
 from xplore_ds.features.features_scaling import (
     scaler_feature_fit,
     scaler_feature_transform,
 )
 
 
-class XploreDSFeature:
+class XploreDSModelVariable:
     """
-    Classe de features para modelos de machine learning.
+    Classe de variaveis para modelos de machine learning.
     """
 
     def __init__(
@@ -68,14 +68,14 @@ class XploreDSFeature:
         return data
 
 
-class XploreDSFeatures:
+class XploreDSModelIO:
     """
-    Classe de features para modelos de machine learning.
+    Classe de features e target para modelos de machine learning.
     """
 
     def __init__(
         self,
-        features_config: FeaturesConfig = None,
+        features_config: VariableConfig = None,
         log: object = None,
     ) -> None:
 
@@ -83,7 +83,7 @@ class XploreDSFeatures:
         self.features = {}
 
         for f in features_config:
-            self.features[f.name] = XploreDSFeature(
+            self.features[f.name] = XploreDSModelVariable(
                 name=f.name, scaling_method=f.scaling_method, log=self.log
             )
 

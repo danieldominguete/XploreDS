@@ -27,10 +27,9 @@ from xplore_ds.data_schemas.logistic_regression_config import (
     Topology,
     FitAlgorithm,
 )
-from xplore_ds.data_schemas.knowledge_base_config import (
-    KnowledgeBaseConfig,
-    FeaturesConfig,
-    TargetConfig,
+from xplore_ds.data_schemas.model_io_config import (
+    ModelIOConfig,
+    VariableConfig,
     ScalingMethod,
     ApplicationType,
 )
@@ -69,44 +68,48 @@ random_state = 100
 # Configuracao de dados de entrada
 
 input_dataset_train_file_path = (
-    "data/projects/stage/wine_quality/wine_quality_train.parquet"
+    "data/projects/stage/wine_quality/winequality-red-processed.parquet"
 )
 input_dataset_test_file_path = (
-    "data/projects/stage/wine_quality/wine_quality_test.parquet"
+    "data/projects/stage/wine_quality/winequality-red-processed.parquet"
 )
 
 # ----------------------------------------------------------------------------------
 # Configuracao de features e target
 
-volatile_acidity = FeaturesConfig(
-    name="volatile acidity", scaling_method=ScalingMethod.min_max_scaler
-)
-citric_acid = FeaturesConfig(
-    name="citric acid", scaling_method=ScalingMethod.mean_std_scaler
-)
-residual_sugar = FeaturesConfig(
-    name="residual sugar", scaling_method=ScalingMethod.none_scaler
-)
-chlorides = FeaturesConfig(name="chlorides", scaling_method=ScalingMethod.none_scaler)
-free_sulfur_dioxide = FeaturesConfig(
-    name="free sulfur dioxide", scaling_method=ScalingMethod.none_scaler
-)
-total_sulfur_dioxide = FeaturesConfig(
-    name="total sulfur dioxide", scaling_method=ScalingMethod.none_scaler
-)
-density = FeaturesConfig(name="density", scaling_method=ScalingMethod.none_scaler)
-pH = FeaturesConfig(name="pH", scaling_method=ScalingMethod.none_scaler)
-sulphates = FeaturesConfig(name="sulphates", scaling_method=ScalingMethod.none_scaler)
-alcohol = FeaturesConfig(name="alcohol", scaling_method=ScalingMethod.none_scaler)
-fixed_acidity = FeaturesConfig(
+fixed_acidity = VariableConfig(
     name="fixed acidity", scaling_method=ScalingMethod.none_scaler
 )
-target_label = TargetConfig(name="target_label")
+volatile_acidity = VariableConfig(
+    name="volatile acidity", scaling_method=ScalingMethod.min_max_scaler
+)
+citric_acid = VariableConfig(
+    name="citric acid", scaling_method=ScalingMethod.mean_std_scaler
+)
+residual_sugar = VariableConfig(
+    name="residual sugar", scaling_method=ScalingMethod.none_scaler
+)
+chlorides = VariableConfig(name="chlorides", scaling_method=ScalingMethod.none_scaler)
+free_sulfur_dioxide = VariableConfig(
+    name="free sulfur dioxide", scaling_method=ScalingMethod.none_scaler
+)
+total_sulfur_dioxide = VariableConfig(
+    name="total sulfur dioxide", scaling_method=ScalingMethod.none_scaler
+)
+density = VariableConfig(name="density", scaling_method=ScalingMethod.none_scaler)
+pH_label_acid = VariableConfig(
+    name="pH_label_acid",
+    scaling_method=ScalingMethod.none_scaler,
+)
+sulphates = VariableConfig(name="sulphates", scaling_method=ScalingMethod.none_scaler)
+alcohol = VariableConfig(name="alcohol", scaling_method=ScalingMethod.none_scaler)
+
+quality_label_bad = VariableConfig(name="quality_label_bad")
 
 # ----------------------------------------------------------------------------------
 # Configurando a base de conhecimento "ground thruth" para tunning do modelo
 
-knowledge_base_config = KnowledgeBaseConfig(
+model_io_config = ModelIOConfig(
     application_type=ApplicationType.binary_classification,
     features=[
         volatile_acidity,
@@ -116,12 +119,12 @@ knowledge_base_config = KnowledgeBaseConfig(
         free_sulfur_dioxide,
         total_sulfur_dioxide,
         density,
-        pH,
+        pH_label_acid,
         sulphates,
         alcohol,
         fixed_acidity,
     ],
-    target=[target_label],
+    target=[quality_label_bad],
 )
 
 # ----------------------------------------------------------------------------------
@@ -170,9 +173,6 @@ data_train = load_dataframe_from_parquet(
     file_path=input_dataset_train_file_path, log=log
 )
 
-# marcacao para classificador binario
-data_train["target_label"] = np.where(data_train["quality"] <= 5, "bad", "good")
-
 # ==================================================================================
 # Regras de negócio
 # ==================================================================================
@@ -185,7 +185,7 @@ log.title("Training model")
 log.info("Creating model topology...")
 
 model = XLogisticRegression(
-    kb_config=knowledge_base_config,
+    model_io_config=model_io_config,
     model_config=model_config,
     tunning_config=tunning_config,
     random_state=random_state,
@@ -213,17 +213,22 @@ log.title("Evaluating model with training data")
 data_train = load_dataframe_from_parquet(
     file_path=input_dataset_train_file_path, log=log
 )
-data_train["target_label"] = np.where(data_train["quality"] <= 5, "bad", "good")
 
 data_train = model.predict(
     data=data_train,
-    y_predict_column_name="output_predict",
+    y_predict_column_name="output_predict_value",
+)
+
+data_train = model.predict_class(
+    data=data_train,
+    trigger=0.5,
+    y_predict_class_column_name="output_predict_class",
 )
 
 model.evaluate(
     data=data_train,
-    y_predict_column_name="output_predict",
-    y_target_column_name=knowledge_base_config.target[0].name,
+    y_predict_column_name="output_predict_value",
+    y_target_column_name=model_io_config.target[0].name,
     view_charts=view_charts,
     save_charts=save_charts,
     results_folder=results_folder,
@@ -246,7 +251,7 @@ data_test = model.predict(
 model.evaluate(
     data=data_test,
     y_predict_column_name="output_predict",
-    y_target_column_name=knowledge_base_config.target[0].name,
+    y_target_column_name=model_io_config.target[0].name,
     view_charts=view_charts,
     save_charts=save_charts,
     results_folder=results_folder,

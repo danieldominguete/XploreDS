@@ -325,6 +325,10 @@ def save_dataframe_to_parquet(data: pd, file_path: str, log: object) -> None:
 
     data.to_parquet(file_path)
 
+    if log:
+        log.info("Dataframe saved to parquet file: " + file_path)
+        log.info("Variables list: " + str(data.columns.values.tolist()))
+
 
 def load_dataframe_from_parquet(file_path: str, log: object = None) -> pd:
     """

@@ -3,6 +3,7 @@ Xplore DS :: Logging Tools Package
 """
 
 import logging
+import warnings
 from datetime import datetime
 import time
 from pathlib import Path
@@ -68,6 +69,9 @@ class XploreDSLogging:
 
         # configurando o logger
         self.logger = self._setup_logger()
+
+        # Configuracao de warnings
+        warnings.filterwarnings(os.getenv("PYTHON_WARNINGS"))
 
     def _setup_logger(self) -> None:
         """

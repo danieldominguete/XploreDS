@@ -32,7 +32,6 @@ class PipelineExecution:
 
         # Variaveis de ambiente
         load_dotenv()
-        PYTHON_WARNINGS = os.getenv("PYTHON_WARNINGS")
 
         # Setup de ambiente de execucao
         env = XploreDSLocalhost(run_folder=working_folder)
@@ -44,19 +43,17 @@ class PipelineExecution:
         log.init_run()
         log.log_environment_setup()
 
-        # # ===========================================================================================
-        # # Script Setup
+        # ===========================================================================================
+        # Orquestrando do tipo de pipeline
 
-        # # Loading json file
-        # data_config = Util.load_parameters_from_file(path_file=self.parameters_file)
+        # Validando leitura do arquivo de configuracao
+        if self.config is None:
+            raise Exception("Config file is empty")
 
-        # # Validate parameters and load environment class
+        # Validando configuracao do tipo de pipeline
+
         # env_param = EnvironmentParameters(**data_config.get("environment_parameters"))
         # env = Environment(param=env_param)
-
-        # # Validade parameters and load data processing class
-        # data_param = Static2ClassParameters(**data_config.get("static2class_parameters"))
-        # ds = DataProcessing(param=data_param)
 
         # # ===========================================================================================
         # # Setup environment

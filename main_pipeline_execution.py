@@ -1,5 +1,5 @@
 """
-Orquestrador de disparo de pipelines conforme arquivo de configuracao
+XploreDS :: Orquestrador de disparo de pipelines conforme arquivo de configuracao
 """
 
 # Importing the libraries
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         processor = PipelineExecution(pipeline_configuration=pipe_config_data)
         processor.run()
     except Exception as e:
-        logging.error(f"Error: {str(e)}")
+        logging.error(f"{str(e)}")
         raise
 # ===========================================================================================
 # ===========================================================================================

@@ -241,10 +241,13 @@ class XploreDSLogging:
             "**********************************************************************************"
         )
         logging.info("Environment Setup")
-        logging.info("OS id: " + str(platform.platform()))
-        logging.info("OS System: " + str(platform.system()))
-        logging.info("OS Node Name: " + str(platform.node()))
-        logging.info("OS Release:" + str(platform.release()))
+        logging.info(
+            "----------------------------------------------------------------------------------"
+        )
+        logging.info("Machine Setup")
+        logging.info(
+            "----------------------------------------------------------------------------------"
+        )
         logging.info("Machine: " + str(platform.machine()))
         logging.info("Processor: " + str(platform.processor()))
         logging.info("Physical cores: " + str(psutil.cpu_count(logical=False)))
@@ -254,13 +257,39 @@ class XploreDSLogging:
                 gb=convert_bytes(psutil.virtual_memory().total, "GB"),
             )
         )
+        logging.info(
+            "----------------------------------------------------------------------------------"
+        )
+        logging.info("OS Setup")
+        logging.info(
+            "----------------------------------------------------------------------------------"
+        )
+        logging.info("OS id: " + str(platform.platform()))
+        logging.info("OS System: " + str(platform.system()))
+        logging.info("OS Node Name: " + str(platform.node()))
+        logging.info("OS Release:" + str(platform.release()))
 
+        logging.info(
+            "----------------------------------------------------------------------------------"
+        )
+        logging.info("Python Setup")
+        logging.info(
+            "----------------------------------------------------------------------------------"
+        )
         logging.info("Python version: " + sys.version)
         logging.info("Python path: " + sys.executable)
+        logging.info("Python warnings: " + str(os.getenv("PYTHON_WARNINGS")))
+        logging.info(
+            "----------------------------------------------------------------------------------"
+        )
+        logging.info("Run Setup")
+        logging.info(
+            "----------------------------------------------------------------------------------"
+        )
         logging.info("Root folder:" + str(self.project_root))
         logging.info("Run name: " + str(self.log_run))
         logging.info("Artifacts folder:" + str(self.log_path))
-        logging.info("Python warnings: " + str(os.getenv("PYTHON_WARNINGS")))
+
         logging.info(
             "**********************************************************************************"
         )

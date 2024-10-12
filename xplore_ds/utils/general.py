@@ -1,3 +1,8 @@
+"""
+Xplore DS :: General Utils Package
+"""
+
+
 def convert_bytes(bytes: int, to_unit: str = "GB") -> float:
     units = {"KB": 1, "MB": 2, "GB": 3, "TB": 4}
     if to_unit not in units:

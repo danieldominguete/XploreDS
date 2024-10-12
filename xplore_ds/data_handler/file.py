@@ -227,7 +227,7 @@ def get_filename_from_path(path: str) -> str:
     return Path(path).name
 
 
-def load_parameters_from_file(path_file: str) -> dict:
+def load_dictionary_from_json(path_file: str) -> dict:
     """
     Load parameters from a JSON file.
 
@@ -239,11 +239,6 @@ def load_parameters_from_file(path_file: str) -> dict:
 
     Returns:
         dict: A dictionary containing the parameters loaded from the JSON file.
-
-    Raises:
-        Exception: If there's an error opening or parsing the JSON file.
-            The specific exception type depends on what went wrong
-            (e.g., FileNotFoundError, json.JSONDecodeError).
 
     """
     try:

@@ -1,5 +1,5 @@
 """
-Xplore DS :: Training Logistic Regression Model for Binary Classification
+Xplore DS : Pipeline de tunning
 """
 
 # Importando bibliotecas nativas
@@ -9,8 +9,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import numpy as np
 
-# Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib em projeto local
-# Futuramente substituir pois a lib estará já instalada no .venv
+# Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib
 project_folder = Path(__file__).resolve().parents[8]
 sys.path.append(str(project_folder))
 
@@ -284,3 +283,33 @@ save_dataframe_to_parquet(
 # Encerramento do script
 # ==================================================================================
 log.close_run()
+
+
+# ===========================================================================================
+# ===========================================================================================
+# Main call from terminal
+if __name__ == "__main__":
+    """
+    Call from terminal command
+    """
+
+    # getting script arguments
+    parser = argparse.ArgumentParser(description="XploreML - Script Main")
+    parser.add_argument(
+        "-f",
+        "--config_file_json",
+        help="Json config file for script execution",
+        required=True,
+    )
+
+    args = parser.parse_args()
+
+    # Running script main
+    try:
+        processor = BuildStatic2ValueMain(parameters_file=args.config_file_json)
+        processor.run()
+    except:
+        logging.error("Ops " + str(sys.exc_info()[0]) + " occured!")
+        raise
+# ===========================================================================================
+# ===========================================================================================

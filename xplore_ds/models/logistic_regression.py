@@ -26,7 +26,7 @@ class XLogisticRegression(XploreDSModel):
         data: pd,
     ) -> None:
 
-        # aplicando processamento de encoder e scaling no dataset
+        # aplicando processamento de scaling no dataset
         self.log.title("Input and output variables pre-processing...")
 
         data = self.model_io_fit_transform(
@@ -77,5 +77,3 @@ class XLogisticRegression(XploreDSModel):
         data[y_predict_column_name_output] = self.model.predict(data_input)
 
         return data
-
-    

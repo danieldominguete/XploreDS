@@ -26,26 +26,26 @@ class XLinearRegression(XploreDSModel):
         data: pd,
     ) -> None:
 
-        # aplicando processamento de scaling de features
-        self.log.title("Features fit")
+        # aplicando processamento de scaling no dataset
+        self.log.title("Input and output variables pre-processing...")
 
         data = self.model_io_fit_transform(
             data=data,
         )
 
-        data_input = data[self.features_setup.get_features_names_scaled()]
+        data_input = data[self.model_io_setup.get_features_names_scaled()]
 
         # incluindo coeficiente independente
         if self.model_config.set_intersection_with_zero == False:
             data_input = sm.add_constant(data_input)
 
         if self.tunning_config.fit_algorithm == FitAlgorithm.ordinary_least_squares:
-            target_column = self.target_setup.get_target_name()
+            target_column = self.model_io_setup.get_target_name()
             self.model = sm.OLS(data[target_column], data_input)
         elif (
             self.tunning_config.fit_algorithm == FitAlgorithm.generalized_least_squares
         ):
-            target_column = self.target_setup.get_target_name()
+            target_column = self.model_io_setup.get_target_name()
             self.model = sm.GLS(data[target_column], data_input)
         else:
             self.log.error("Fit algorithm not implemented")
@@ -65,7 +65,7 @@ class XLinearRegression(XploreDSModel):
             data=data,
         )
 
-        data_input = data[self.features_setup.get_features_names_scaled()]
+        data_input = data[self.model_io_setup.get_features_names_scaled()]
 
         # incluindo coeficiente independente
         if self.model_config.set_intersection_with_zero == False:

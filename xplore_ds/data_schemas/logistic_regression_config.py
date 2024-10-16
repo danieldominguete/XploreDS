@@ -17,7 +17,7 @@ class FitAlgorithm(str, Enum):
     maximum_likelihood = "maximum_likelihood"
 
 
-class LogisticRegressionConfig(BaseModel):
+class LogisticRegressionArchiteture(BaseModel):
 
     set_intersection_with_zero: bool = False
     topology: Topology = Topology.logit

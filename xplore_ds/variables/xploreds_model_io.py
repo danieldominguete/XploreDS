@@ -86,6 +86,9 @@ class XploreDSModelIO:
         self,
         features_config: VariableIOConfig = None,
         target_config: VariableIOConfig = None,
+        target_categorical_index: list[VariableIOConfig] = [],
+        target_textual: list[VariableIOConfig] = [],
+        target_index_to_label: dict[int, str] = {},
         log: object = None,
     ) -> None:
 
@@ -94,6 +97,9 @@ class XploreDSModelIO:
         self.target = {}
         self.features_encoded_scaled = []
         self.target_encoded_scaled = []
+        self.target_categorical_index = target_categorical_index
+        self.target_textual = target_textual
+        self.target_index_to_label = target_index_to_label
 
         for f in features_config:
             self.features[f.name] = XploreDSModelVariable(
@@ -210,3 +216,9 @@ class XploreDSModelIO:
         Get target names scaled
         """
         return [f.name_scaled for f in self.target.values()]
+
+    def get_class_labels(self):
+        """
+        Get class labels
+        """
+        return list(self.target_index_to_label.values())

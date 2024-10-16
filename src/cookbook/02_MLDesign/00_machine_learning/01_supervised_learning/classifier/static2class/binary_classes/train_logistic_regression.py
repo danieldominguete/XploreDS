@@ -23,7 +23,7 @@ from xplore_ds.data_handler.file import (
 )
 from xplore_ds.models.logistic_regression import XLogisticRegression
 from xplore_ds.data_schemas.logistic_regression_config import (
-    LogisticRegressionConfig,
+    LogisticRegressionArchiteture,
     LogisticRegressionHyperparameters,
     Topology,
     FitAlgorithm,
@@ -127,13 +127,14 @@ model_io_config = ModelIOConfig(
         fixed_acidity,
     ],
     target_numerical=[quality_label_bad],
-    target_categorical=[quality_label],
+    target_categorical_index=[quality_label_bad],
+    target_index_to_label={0: "bad", 1: "good"},
 )
 
 # ----------------------------------------------------------------------------------
 # Setup do modelo
 
-model_config = LogisticRegressionConfig(
+model_config = LogisticRegressionArchiteture(
     set_intersection_with_zero=False, topology=Topology.logit
 )
 
@@ -217,6 +218,11 @@ data_train = load_dataframe_from_parquet(
     file_path=input_dataset_train_file_path, log=log
 )
 
+if model_io_config.target_index_to_label is not None:
+    data_train["output_target_class"] = data_train[
+        model_io_config.target_categorical_index[0].name
+    ].map(model_io_config.target_index_to_label)
+
 data_train = model.predict(
     data=data_train,
     y_predict_column_name_output="output_predict_value",
@@ -226,12 +232,15 @@ data_train = model.predict_class(
     data=data_train,
     trigger=0.5,
     y_predict_class_column_name_output="output_predict_class",
+    index_to_class_map=model_io_config.target_index_to_label,
 )
 
 model.evaluate(
     data=data_train,
     y_predict_column_name="output_predict_value",
+    y_predict_class_column_name="output_predict_class",
     y_target_column_name=model_io_config.target_numerical[0].name,
+    y_target_class_column_name="output_target_class",
     view_charts=view_charts,
     save_charts=save_charts,
     results_folder=results_folder,
@@ -254,7 +263,7 @@ data_test = model.predict(
 model.evaluate(
     data=data_test,
     y_predict_column_name="output_predict",
-    y_target_column_name=model_io_config.target[0].name,
+    y_target_column_name=model_io_config.target_numerical[0].name,
     view_charts=view_charts,
     save_charts=save_charts,
     results_folder=results_folder,

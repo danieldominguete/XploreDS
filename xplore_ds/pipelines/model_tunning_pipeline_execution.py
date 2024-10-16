@@ -25,7 +25,7 @@ from xplore_ds.data_handler.file import (
 )
 from xplore_ds.models.logistic_regression import XLogisticRegression
 from xplore_ds.data_schemas.logistic_regression_config import (
-    LogisticRegressionConfig,
+    LogisticRegressionArchiteture,
     LogisticRegressionHyperparameters,
     Topology,
     FitAlgorithm,
@@ -36,36 +36,42 @@ from xplore_ds.data_schemas.model_io_config import (
     ScalingMethod,
     ApplicationType,
 )
+from xplore_ds.data_schemas.pipeline_config import ModelType
 
 
 class ModelTunningPipelineExecution:
 
     def __init__(
         self,
-        config: dict,
+        config: object,
         env: XploreDSLocalhost,
         log: XploreDSLogging,
+        view_charts: bool = False,
+        save_charts: bool = True,
     ):
 
         self.config = config
         self.env = env
         self.log = log
+        self.view_charts = view_charts
+        self.save_charts = save_charts
 
     def run(self):
 
         # ----------------------------------------------------------------------------------
-        # Setup do modelo
+        # Setup da arquitetura e hyperparametros do modelo
 
-        model_config = LogisticRegressionConfig(
-            set_intersection_with_zero=False, topology=Topology.logit
-        )
+        if self.config.model_type == ModelType.logistic_regression:
 
-        # ----------------------------------------------------------------------------------
-        # Hiperparametros
+            model_config = LogisticRegressionArchiteture(
+                **self.config.model_architeture
+            )
 
-        tunning_config = LogisticRegressionHyperparameters(
-            fit_algorithm=FitAlgorithm.maximum_likelihood,
-        )
+            tunning_config = LogisticRegressionHyperparameters(
+                **self.config.model_hyperparameters
+            )
+        else:
+            raise Exception("Model type not supported")
 
         # ----------------------------------------------------------------------------------
         # Configuracao de artefatos de saida
@@ -73,17 +79,14 @@ class ModelTunningPipelineExecution:
         results_folder = self.log.log_path
 
         output_dataset_train_predict_file_path = (
-            results_folder + "data/wine_quality_train_classification_predict.parquet"
+            results_folder + "data/" + self.log.log_run + "_predict_train.parquet"
         )
         output_dataset_test_predict_file_path = (
-            results_folder + "data/wine_quality_test_classification_predict.parquet"
+            results_folder + "data/" + self.log.log_run + "_predict_test.parquet"
         )
         output_model_file_path = (
-            results_folder + "models/wine_quality_logistic_regression.joblib"
+            results_folder + "models/" + self.log.log_run + "_model.joblib"
         )
-
-        view_charts = True
-        save_charts = True
 
         # **********************************************************************************
         # Execucao do script
@@ -140,23 +143,26 @@ class ModelTunningPipelineExecution:
             file_path=self.config.input_dataset_train_file_path, log=self.log
         )
 
+        self.log.info("Predicting output value ...")
         data_train = model.predict(
             data=data_train,
             y_predict_column_name_output="output_predict_value",
         )
 
+        self.log.info("Predicting output class ...")
         data_train = model.predict_class(
             data=data_train,
             trigger=0.5,
             y_predict_class_column_name_output="output_predict_class",
+            int_to_class_map={0: "bad", 1: "good"},
         )
 
         model.evaluate(
             data=data_train,
             y_predict_column_name="output_predict_value",
             y_target_column_name=self.config.model_io_config.target_numerical[0].name,
-            view_charts=view_charts,
-            save_charts=save_charts,
+            view_charts=self.view_charts,
+            save_charts=self.save_charts,
             results_folder=results_folder,
         )
 
@@ -168,19 +174,24 @@ class ModelTunningPipelineExecution:
         data_test = load_dataframe_from_parquet(
             file_path=self.config.input_dataset_test_file_path, log=self.log
         )
-        data_test["target_label"] = np.where(data_test["quality"] <= 5, "bad", "good")
 
         data_test = model.predict(
             data=data_test,
             y_predict_column_name_output="output_predict",
         )
 
+        data_test = model.predict_class(
+            data=data_test,
+            trigger=0.5,
+            y_predict_class_column_name_output="output_predict_class",
+        )
+
         model.evaluate(
             data=data_test,
             y_predict_column_name="output_predict",
             y_target_column_name=self.config.model_io_config.target_numerical[0].name,
-            view_charts=view_charts,
-            save_charts=save_charts,
+            view_charts=self.view_charts,
+            save_charts=self.save_charts,
             results_folder=results_folder,
         )
 

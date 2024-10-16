@@ -29,7 +29,8 @@ class VariableIOConfig(BaseModel):
 class ModelIOConfig(BaseModel):
 
     application_type: ApplicationType
-    features: list[VariableIOConfig] = []
-    target_numerical: list[VariableIOConfig] = []
-    target_categorical: list[VariableIOConfig] = []
+    features: list[VariableIOConfig]
+    target_numerical: list[VariableIOConfig]
+    target_categorical_index: list[VariableIOConfig] = []
     target_textual: list[VariableIOConfig] = []
+    target_index_to_label: dict[int, str] = {}

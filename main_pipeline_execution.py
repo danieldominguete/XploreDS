@@ -82,6 +82,8 @@ class PipelineExecution:
                 config=pipeline_model_tunning_config,
                 env=env,
                 log=log,
+                save_charts=self.config.get("pipeline_config").get("save_charts"),
+                view_charts=self.config.get("pipeline_config").get("view_charts"),
             )
 
             # Executando pipeline

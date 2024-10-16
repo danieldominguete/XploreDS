@@ -1,8 +1,10 @@
 {
     "pipeline_config": {
-        "pipeline_name": "Nome deste pipeline",
+        "pipeline_label": "nome_pipeline",
         "pipeline_type": "model_tunning",
-        "pipeline_description": "Descrição deste pipeline"
+        "pipeline_description": "Descrição deste pipeline",
+        "view_charts": true,
+        "save_charts": true
     },
     "pipeline_model_tunning_config": {
         "input_dataset_train_file_path": "data/projects/stage/wine_quality/winequality-red-processed-train.parquet",
@@ -61,12 +63,18 @@
                     "scaling_method": "none_scaler"
                 }
             ],
-            "target_categorical": [
-                {
-                    "name": "quality_label",
-                    "scaling_method": "none_scaler"
-                }
-            ]
+            "target_int_to_label": {
+                "0": "quality_label_bad",
+                "1": "quality_label_good"
+            }
+        },
+        "model_type": "logistic_regression",
+        "model_architeture": {
+            "set_intersection_with_zero": false,
+            "topology": "logit"
+        },
+        "model_hyperparameters": {
+            "fit_algorithm": "maximum_likelihood"
         }
     }
 }

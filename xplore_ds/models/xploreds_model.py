@@ -47,6 +47,7 @@ class XploreDSModel(ABC):
         self.model_io_setup = XploreDSModelIO(
             features_config=self.model_io_config.features,
             target_config=self.model_io_config.target_numerical,
+            target_index_to_label=self.model_io_config.target_index_to_label,
             log=self.log,
         )
 
@@ -71,7 +72,7 @@ class XploreDSModel(ABC):
         data,
         trigger,
         y_predict_class_column_name_output,
-        int_to_class_map: dict = None,
+        index_to_class_map: dict = None,
     ):
         """
         Calculate predicted class for the given test data.
@@ -88,10 +89,10 @@ class XploreDSModel(ABC):
                 data["_predicted_value"] > trigger, 1, 0
             )
 
-            if int_to_class_map is not None:
+            if index_to_class_map is not None:
                 data[y_predict_class_column_name_output] = data[
                     y_predict_class_column_name_output
-                ].map(int_to_class_map)
+                ].map(index_to_class_map)
 
             data = data.drop(columns=["_predicted_value"])
 
@@ -130,12 +131,14 @@ class XploreDSModel(ABC):
             self.model_io_config.application_type
             == ApplicationType.binary_classification
         ):
+
             evaluate_binary_classification(
                 data=data,
                 y_predict_column_name=y_predict_column_name,
                 y_target_column_name=y_target_column_name,
                 y_predict_class_column_name=y_predict_class_column_name,
                 y_target_class_column_name=y_target_class_column_name,
+                labels=self.model_io_setup.get_class_labels(),
                 view_charts=view_charts,
                 save_charts=save_charts,
                 results_folder=results_folder,

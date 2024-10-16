@@ -253,6 +253,8 @@ def evaluate_binary_classification(
     data: pd,
     y_predict_column_name: str,
     y_target_column_name: str,
+    y_predict_class_column_name: str,
+    y_target_class_column_name: str,
     results_folder: str = None,
     view_charts: bool = True,
     save_charts: bool = True,

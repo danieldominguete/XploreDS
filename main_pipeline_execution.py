@@ -15,6 +15,11 @@ import argparse
 from xplore_ds.environment.environment import XploreDSLocalhost
 from xplore_ds.environment.logging import XploreDSLogging
 from xplore_ds.data_handler.file import load_dictionary_from_json
+from xplore_ds.data_schemas.pipeline_config import (
+    PipelineConfig,
+    PipelineType,
+    PipelineModelTunningConfig,
+)
 
 
 class PipelineExecution:
@@ -45,19 +50,46 @@ class PipelineExecution:
 
         # ===========================================================================================
         # Orquestrando do tipo de pipeline
+        # ==================================================================================
 
         # Validando leitura do arquivo de configuracao
         if self.config is None:
             raise Exception("Config file is empty")
 
-        # Validando configuracao do tipo de pipeline
+        # Validando configuracao geral do pipeline
+        if "pipeline_config" not in self.config:
+            raise Exception("Pipeline configuration not found")
+        else:
+            pipeline_config = PipelineConfig(**self.config.get("pipeline_config"))
 
-        # env_param = EnvironmentParameters(**data_config.get("environment_parameters"))
-        # env = Environment(param=env_param)
+        # Encaminhando job para o pipeline correto
+        if pipeline_config.pipeline_type == PipelineType.model_tunning:
 
-        # # ===========================================================================================
-        # # Setup environment
-        # env.init_script(script_name=os.path.basename(__file__), warnings_level=PYTHON_WARNINGS)
+            # Validando configuracao do pipeline
+            if "pipeline_model_tunning_config" not in self.config:
+                raise Exception("Model tunning configuration not found")
+            else:
+                pipeline_model_tunning_config = PipelineModelTunningConfig(
+                    **self.config.get("pipeline_model_tunning_config")
+                )
+
+            from xplore_ds.pipelines.model_tunning_pipeline_execution import (
+                ModelTunningPipelineExecution,
+            )
+
+            # Instanciando pipeline
+            pipeline = ModelTunningPipelineExecution(
+                config=pipeline_model_tunning_config,
+                env=env,
+                log=log,
+            )
+
+            # Executando pipeline
+            pipeline.run()
+
+        # ===========================================================================================
+        # Encerrando execucao
+        # ==================================================================================
         log.close_run()
 
 

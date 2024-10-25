@@ -88,6 +88,10 @@ class ModelTunningPipelineExecution:
             results_folder + "models/" + self.log.log_run + "_model.joblib"
         )
 
+        # colunas que serao geradas no arquivo de saida do predict do modelo treinado
+        output_predict_value_col_name = "output_predict_value"
+        output_predict_class_col_name = ("output_predict_class",)
+
         # **********************************************************************************
         # Execucao do script
         # **********************************************************************************
@@ -149,7 +153,7 @@ class ModelTunningPipelineExecution:
         self.log.info("Predicting output value ...")
         data_train = model.predict(
             data=data_train,
-            y_predict_column_name_output="output_predict_value",
+            y_predict_column_name_output=output_predict_value_col_name,
         )
 
         if (
@@ -160,14 +164,13 @@ class ModelTunningPipelineExecution:
             data_train = model.predict_class(
                 data=data_train,
                 trigger=0.5,
-                y_predict_class_column_name_output="output_predict_class",
-                index_to_class_map={0: "bad", 1: "good"},
+                y_predict_class_column_name_output=output_predict_class_col_name,
             )
 
         model.evaluate(
             data=data_train,
-            y_predict_numerical_column_list=["output_predict_value"],
-            y_predict_class_column_name="output_predict_class",
+            y_predict_numerical_column_list=[output_predict_value_col_name],
+            y_predict_class_column_name=output_predict_class_col_name,
             y_target_numerical_column_list=[
                 self.config.model_io_config.target_numerical[0].name
             ],
@@ -188,7 +191,7 @@ class ModelTunningPipelineExecution:
 
         data_test = model.predict(
             data=data_test,
-            y_predict_column_name_output="output_predict_value",
+            y_predict_column_name_output=output_predict_value_col_name,
         )
 
         if (
@@ -199,14 +202,13 @@ class ModelTunningPipelineExecution:
             data_test = model.predict_class(
                 data=data_test,
                 trigger=0.5,
-                y_predict_class_column_name_output="output_predict_class",
-                index_to_class_map={0: "bad", 1: "good"},
+                y_predict_class_column_name_output=output_predict_class_col_name,
             )
 
         model.evaluate(
             data=data_test,
-            y_predict_numerical_column_list=["output_predict_value"],
-            y_predict_class_column_name="output_predict_class",
+            y_predict_numerical_column_list=[output_predict_value_col_name],
+            y_predict_class_column_name=output_predict_class_col_name,
             y_target_numerical_column_list=[
                 self.config.model_io_config.target_numerical[0].name
             ],

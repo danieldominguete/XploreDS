@@ -4,7 +4,7 @@ Xplore DS :: Data visualization with Plotly
 
 import plotly.express as px
 import plotly.graph_objs as go
-from sklearn.metrics import ConfusionMatrixDisplay
+import plotly.figure_factory as ff
 from pathlib import Path
 import sys
 import os
@@ -72,41 +72,73 @@ def plot_histogram(
         deploy_chart_in_navigator(fig)
 
 
-def plot_confusion_matrix(confusion_matrix, class_names):
-
-    confusion_matrix = confusion_matrix.astype(int)
-
-    layout = {
-        "title": "Confusion Matrix",
-        "xaxis": {"title": "Predicted value"},
-        "yaxis": {"title": "Real value"},
-    }
-
-    fig = go.Figure(
-        data=go.Heatmap(
-            z=confusion_matrix, x=class_names, y=class_names, hoverongaps=False
-        ),
-        layout=layout,
-    )
-    fig.show()
-
-
 def plot_confusion_matrix(
     confusion_matrix: object,
-    labels: list,
+    x_y_labels: list,
     title: str = "",
     view_chart: bool = True,
     save_chart: bool = False,
     file_path_image: str = None,
 ):
-    # create the heatmap
-    heatmap = go.Heatmap(z=confusion_matrix, x=labels, y=labels, colorscale="Viridis")
 
-    # create the layout
-    layout = go.Layout(title=title)
+    fig = px.imshow(
+        confusion_matrix,
+        text_auto="0.2f",
+        aspect="auto",
+        title=title,
+        x=x_y_labels,
+        y=x_y_labels,
+    )
+    fig.update_xaxes(visible=True, title_text="Predicted value")
+    fig.update_yaxes(visible=True, title_text="Real value")
 
-    # create the figure
-    fig = go.Figure(data=[heatmap], layout=layout)
+    if save_chart:
+        save_chart_file(fig, file_path_image)
+
+    if view_chart:
+        deploy_chart_in_navigator(fig)
+
+
+def plot_precision_recall_curve(
+    precision: list,
+    recall: list,
+    title: str = "",
+    view_chart: bool = True,
+    save_chart: bool = False,
+    file_path_image: str = None,
+):
+
+    fig = px.area(
+        x=recall,
+        y=precision,
+        title=title,
+    )
+    fig.update_xaxes(title_text="Recall")
+    fig.update_yaxes(title_text="Precision")
+
+    if save_chart:
+        save_chart_file(fig, file_path_image)
+
+    if view_chart:
+        deploy_chart_in_navigator(fig)
+
+
+def plot_roc_curve(
+    fpr: list,
+    tpr: list,
+    title: str = "",
+    view_chart: bool = True,
+    save_chart: bool = False,
+    file_path_image: str = None,
+):
+
+    fig = px.area(
+        x=fpr,
+        y=tpr,
+        title=title,
+    )
+    fig.update_xaxes(title_text="False Positive Rate")
+    fig.update_yaxes(title_text="True Positive Rate")
 
     if save_chart:
         save_chart_file(fig, file_path_image)

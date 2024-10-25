@@ -105,7 +105,9 @@ pH_label_acid = VariableIOConfig(
 sulphates = VariableIOConfig(name="sulphates", scaling_method=ScalingMethod.none_scaler)
 alcohol = VariableIOConfig(name="alcohol", scaling_method=ScalingMethod.none_scaler)
 
-quality_label_bad = VariableIOConfig(name="quality_label_bad")
+quality_label_bad = VariableIOConfig(
+    name="quality_label_bad", scaling_method=ScalingMethod.none_scaler
+)
 quality_label = VariableIOConfig(name="quality_label")
 
 # ----------------------------------------------------------------------------------
@@ -127,7 +129,8 @@ model_io_config = ModelIOConfig(
         fixed_acidity,
     ],
     target_numerical=[quality_label_bad],
-    target_categorical_index=[quality_label_bad],
+    target_categorical_index=quality_label_bad,
+    target_categorical_label=quality_label,
     target_categorical_index_to_label={0: "bad", 1: "good"},
 )
 
@@ -218,11 +221,7 @@ data_train = load_dataframe_from_parquet(
     file_path=input_dataset_train_file_path, log=log
 )
 
-if model_io_config.target_categorical_index_to_label is not None:
-    data_train["output_target_class"] = data_train[
-        model_io_config.target_categorical_index[0].name
-    ].map(model_io_config.target_categorical_index_to_label)
-
+log.info("Predicting output value ...")
 data_train = model.predict(
     data=data_train,
     y_predict_column_name_output="output_predict_value",
@@ -232,15 +231,14 @@ data_train = model.predict_class(
     data=data_train,
     trigger=0.5,
     y_predict_class_column_name_output="output_predict_class",
-    index_to_class_map=model_io_config.target_categorical_index_to_label,
 )
 
 model.evaluate(
     data=data_train,
-    y_predict_column_name="output_predict_value",
+    y_predict_numerical_column_list=["output_predict_value"],
     y_predict_class_column_name="output_predict_class",
-    y_target_numerical_column_list=model_io_config.target_numerical[0].name,
-    y_target_class_column_name="output_target_class",
+    y_target_numerical_column_list=[model_io_config.target_numerical[0].name],
+    y_target_class_column_name=model_io_config.target_categorical_label.name,
     view_charts=view_charts,
     save_charts=save_charts,
     results_folder=results_folder,
@@ -253,21 +251,30 @@ model.evaluate(
 log.title("Evaluating model with test data")
 
 data_test = load_dataframe_from_parquet(file_path=input_dataset_test_file_path, log=log)
-data_test["target_label"] = np.where(data_test["quality"] <= 5, "bad", "good")
+
 
 data_test = model.predict(
     data=data_test,
-    y_predict_column_name_output="output_predict",
+    y_predict_column_name_output="output_predict_value",
+)
+
+data_train = model.predict_class(
+    data=data_test,
+    trigger=0.5,
+    y_predict_class_column_name_output="output_predict_class",
 )
 
 model.evaluate(
     data=data_test,
-    y_predict_column_name="output_predict",
-    y_target_numerical_column_list=model_io_config.target_numerical[0].name,
+    y_predict_numerical_column_list=["output_predict_value"],
+    y_predict_class_column_name="output_predict_class",
+    y_target_numerical_column_list=[model_io_config.target_numerical[0].name],
+    y_target_class_column_name=model_io_config.target_categorical_label.name,
     view_charts=view_charts,
     save_charts=save_charts,
     results_folder=results_folder,
 )
+
 
 # ==================================================================================
 # Salvando artefatos de saida

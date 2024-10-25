@@ -18,6 +18,7 @@ from xplore_ds.variables.xploreds_model_io import XploreDSModelIO
 from xplore_ds.models.evaluate_model import (
     evaluate_regression,
     evaluate_binary_classification,
+    evaluate_scoring_classification,
 )
 from xplore_ds.data_schemas.model_io_config import ApplicationType, ModelIOConfig
 
@@ -67,13 +68,7 @@ class XploreDSModel(ABC):
         """
         pass
 
-    def predict_class(
-        self,
-        data,
-        trigger,
-        y_predict_class_column_name_output,
-        index_to_class_map: dict = None,
-    ):
+    def predict_class(self, data, trigger, y_predict_class_column_name_output):
         """
         Calculate predicted class for the given test data.
         """
@@ -89,10 +84,10 @@ class XploreDSModel(ABC):
                 data["_predicted_value"] > trigger, 1, 0
             )
 
-            if index_to_class_map is not None:
+            if self.model_io_config.target_categorical_index_to_label is not None:
                 data[y_predict_class_column_name_output] = data[
                     y_predict_class_column_name_output
-                ].map(index_to_class_map)
+                ].map(self.model_io_config.target_categorical_index_to_label)
 
             data = data.drop(columns=["_predicted_value"])
 
@@ -139,6 +134,20 @@ class XploreDSModel(ABC):
                 y_predict_class_column_name=y_predict_class_column_name,
                 y_target_class_column_name=y_target_class_column_name,
                 labels=self.model_io_setup.get_class_labels(),
+                view_charts=view_charts,
+                save_charts=save_charts,
+                results_folder=results_folder,
+                log=self.log,
+            )
+        elif (
+            self.model_io_config.application_type
+            == ApplicationType.scoring_classification
+        ):
+
+            evaluate_scoring_classification(
+                data=data,
+                y_predict_numerical_column_name=y_predict_numerical_column_list[0],
+                y_target_numerical_column_name=y_target_numerical_column_list[0],
                 view_charts=view_charts,
                 save_charts=save_charts,
                 results_folder=results_folder,

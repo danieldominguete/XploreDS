@@ -215,7 +215,7 @@ data_train = model.predict(
 model.evaluate(
     data=data_train,
     y_predict_column_name="output_predict_value",
-    y_target_column_name=model_io_config.target_numerical[0].name,
+    y_target_numerical_column_list=model_io_config.target_numerical[0].name,
     view_charts=view_charts,
     save_charts=save_charts,
     results_folder=results_folder,
@@ -236,7 +236,7 @@ data_test = model.predict(
 model.evaluate(
     data=data_test,
     y_predict_column_name="output_predict",
-    y_target_column_name=model_io_config.target_numerical[0].name,
+    y_target_numerical_column_list=model_io_config.target_numerical[0].name,
     view_charts=view_charts,
     save_charts=save_charts,
     results_folder=results_folder,

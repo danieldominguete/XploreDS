@@ -12,7 +12,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": [
-                "-f", "pipeline_config/hello.json"
+                "-f", "pipeline_config/tunning_logistic_regression.json"
             ]
         }
     ]

@@ -63,9 +63,16 @@
                     "scaling_method": "none_scaler"
                 }
             ],
-            "target_int_to_label": {
-                "0": "quality_label_bad",
-                "1": "quality_label_good"
+            "target_categorical_label":{
+                "name": "quality_label"
+            },
+            "target_categorical_index": {
+                "name": "quality_label_bad",
+                "scaling_method": "none_scaler"
+            },
+            "target_categorical_index_to_label": {
+                "0": "bad",
+                "1": "good"
             }
         },
         "model_type": "logistic_regression",

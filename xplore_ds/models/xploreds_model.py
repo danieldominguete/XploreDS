@@ -47,7 +47,7 @@ class XploreDSModel(ABC):
         self.model_io_setup = XploreDSModelIO(
             features_config=self.model_io_config.features,
             target_config=self.model_io_config.target_numerical,
-            target_index_to_label=self.model_io_config.target_index_to_label,
+            target_index_to_label=self.model_io_config.target_categorical_index_to_label,
             log=self.log,
         )
 
@@ -105,8 +105,8 @@ class XploreDSModel(ABC):
     def evaluate(
         self,
         data,
-        y_predict_column_name,
-        y_target_column_name,
+        y_predict_numerical_column_list,
+        y_target_numerical_column_list,
         y_predict_class_column_name=None,
         y_target_class_column_name=None,
         view_charts=True,
@@ -120,8 +120,8 @@ class XploreDSModel(ABC):
         if self.model_io_config.application_type == ApplicationType.regression:
             evaluate_regression(
                 data=data,
-                y_predict_column_name=y_predict_column_name,
-                y_target_column_name=y_target_column_name,
+                y_predict_numerical_column_list=y_predict_numerical_column_list,
+                y_target_column_name=y_target_numerical_column_list,
                 view_charts=view_charts,
                 save_charts=save_charts,
                 results_folder=results_folder,
@@ -134,8 +134,8 @@ class XploreDSModel(ABC):
 
             evaluate_binary_classification(
                 data=data,
-                y_predict_column_name=y_predict_column_name,
-                y_target_column_name=y_target_column_name,
+                y_predict_numerical_column_name=y_predict_numerical_column_list[0],
+                y_target_numerical_column_name=y_target_numerical_column_list[0],
                 y_predict_class_column_name=y_predict_class_column_name,
                 y_target_class_column_name=y_target_class_column_name,
                 labels=self.model_io_setup.get_class_labels(),

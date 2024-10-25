@@ -8,10 +8,11 @@ from enum import Enum
 
 class ApplicationType(str, Enum):
 
+    clustering = "clustering"
     regression = "regression"
+    scoring_classification = "scoring_classification"
     binary_classification = "binary_classification"
     multiclass_classification = "multiclass_classification"
-    clustering = "clustering"
 
 
 class ScalingMethod(str, Enum):
@@ -31,6 +32,6 @@ class ModelIOConfig(BaseModel):
     application_type: ApplicationType
     features: list[VariableIOConfig]
     target_numerical: list[VariableIOConfig]
-    target_categorical_index: list[VariableIOConfig] = []
-    target_textual: list[VariableIOConfig] = []
-    target_index_to_label: dict[int, str] = {}
+    target_categorical_label: VariableIOConfig = None
+    target_categorical_index: VariableIOConfig = None
+    target_categorical_index_to_label: dict[int, str] = {}

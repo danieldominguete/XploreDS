@@ -1,6 +1,8 @@
 # SO files
 .DS_Store
 
+# IDE 
+
 # Data files
 *.csv
 *.parquet

@@ -1,26 +1,25 @@
 """
-Xplore DS :: Subset selection script template
+Xplore DS :: Dataset download from Open ML website
 """
 
 # Importando bibliotecas nativas
-import sys, os
+import sys
+import os
 from pathlib import Path
 from dotenv import load_dotenv
-
+import ssl
+from sklearn.datasets import fetch_openml
+import pandas as pd
 
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib
-project_folder = Path(__file__).resolve().parents[5]
+project_folder = Path(__file__).resolve().parents[3]
 sys.path.append(str(project_folder))
 
 # Importando biblioteca Xplore DS
-from xplore_ds.environment.environment import XploreDSLocalhost
-from xplore_ds.environment.logging import XploreDSLogging
-from xplore_ds.data_handler.file import (
-    load_dataframe_from_csv,
-    save_dataframe_to_parquet,
-)
-from sklearn.model_selection import train_test_split
-
+from xploreds.environment.environment import XploreDSLocalhost
+from xploreds.environment.logging import XploreDSLogging
+from xploreds.data_handler.file import save_dataframe_to_parquet
+from xploreds.data_handler.dataframe import describe_dataframe
 
 # ==================================================================================
 # Setup do script
@@ -37,32 +36,22 @@ env = XploreDSLocalhost(run_folder=project_folder)
 log = XploreDSLogging(project_root=project_folder, script_name=script_name)
 log.init_run()
 
+# Configuracao de SSL
+ssl._create_default_https_context = ssl._create_unverified_context
+
 # ==================================================================================
 # Parametrizacao do script
 # ==================================================================================
 
 log.title("Script setup")
 
-# Configuracao de dados de entrada
-input_dataset_file_path = (
-    "data/projects/raw/tabular_data/wine_quality/winequality-red.csv"
-)
-input_dataset_file_path_separator = ","
-
-# Selecao dos subsets
-proportion_test_samples = 0.1
-shuffle = False
-random_state = 100
+# EXEMPLO DE DATASET DE CLASSIFICACAO BINARIA :: CREDIT RISK
+# https://openml.org/search?type=data&status=active&sort=nr_of_downloads&id=31
+dataset_name = "credit-g"
 
 # Configuracao de dados de saida
 output_folder = "output"
-output_dataset_train_file_path = (
-    "data/projects/stage/wine_quality/wine_quality_train.parquet"
-)
-output_dataset_test_file_path = (
-    "data/projects/stage/wine_quality/wine_quality_test.parquet"
-)
-
+output_dataset_file_path = "data/" + dataset_name + "/raw/"
 
 # ==================================================================================
 # Carregando base de dados
@@ -70,23 +59,16 @@ output_dataset_test_file_path = (
 
 log.title("Loading datasets")
 
-data = load_dataframe_from_csv(
-    filepath=input_dataset_file_path,
-    separator=input_dataset_file_path_separator,
-    log=log,
-)
+dataset = fetch_openml(name=dataset_name, as_frame=True)
 
-# ==================================================================================
-# Regras de negócio
-# ==================================================================================
+log.info("Dataset loaded!")
+log.info("Dataset name: " + dataset_name)
+log.info("Dataset description: \n" + str(dataset.DESCR))
+log.info("Dataset features: " + str(dataset.details))
 
-# Realizando o split dos datasets
-data_train, data_test = train_test_split(
-    data,
-    test_size=proportion_test_samples,
-    shuffle=shuffle,
-    random_state=random_state,
-)
+# construindo dataframe unico
+data = pd.concat([dataset.data, dataset.target], axis=1)
+describe_dataframe(data, log=log)
 
 # ==================================================================================
 # Salvando artefatos de saida
@@ -95,13 +77,7 @@ data_train, data_test = train_test_split(
 log.title("Saving output artifacts")
 
 save_dataframe_to_parquet(
-    data=data_train,
-    file_path=output_dataset_train_file_path,
-    log=log,
-)
-
-save_dataframe_to_parquet(
-    data=data_test, file_path=output_dataset_test_file_path, log=log
+    data, output_dataset_file_path + dataset_name + ".parquet", log=log
 )
 
 # ==================================================================================

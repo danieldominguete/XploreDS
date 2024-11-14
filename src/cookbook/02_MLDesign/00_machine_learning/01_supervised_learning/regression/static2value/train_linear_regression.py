@@ -13,19 +13,19 @@ project_folder = Path(__file__).resolve().parents[7]
 sys.path.append(str(project_folder))
 
 # Importando biblioteca Xplore DS
-from xplore_ds.environment.environment import XploreDSLocalhost
-from xplore_ds.environment.logging import XploreDSLogging
-from xplore_ds.data_handler.file import (
+from xploreds.environment.environment import XploreDSLocalhost
+from xploreds.environment.logging import XploreDSLogging
+from xploreds.data_handler.file import (
     load_dataframe_from_parquet,
     save_dataframe_to_parquet,
 )
-from xplore_ds.models.linear_regression import XLinearRegression
-from xplore_ds.data_schemas.linear_regression_config import (
+from xploreds.models.linear_regression import XLinearRegression
+from xploreds.data_schemas.linear_regression_config import (
     LinearRegressionConfig,
     LinearRegressionHyperparameters,
     FitAlgorithm,
 )
-from xplore_ds.data_schemas.model_io_config import (
+from xploreds.data_schemas.model_io_config import (
     ModelIOConfig,
     VariableIOConfig,
     ScalingMethod,

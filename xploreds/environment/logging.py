@@ -7,8 +7,8 @@ import warnings
 from datetime import datetime
 import time
 from pathlib import Path
-from xplore_ds.data_handler.file import create_folder
-from xplore_ds.utils.general import convert_bytes
+from xploreds.data_handler.file import create_folder
+from xploreds.utils.general import convert_bytes
 import sys
 import os
 import platform

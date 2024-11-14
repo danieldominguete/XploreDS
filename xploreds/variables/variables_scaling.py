@@ -11,7 +11,7 @@ import sys, os
 project_folder = Path(__file__).resolve().parents[2]
 sys.path.append(str(project_folder))
 
-from xplore_ds.data_schemas.model_io_config import ScalingMethod
+from xploreds.data_schemas.model_io_config import ScalingMethod
 
 
 def scaler_variable_fit(

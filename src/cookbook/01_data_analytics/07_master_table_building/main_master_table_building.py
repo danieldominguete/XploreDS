@@ -15,19 +15,19 @@ project_folder = Path(__file__).resolve().parents[4]
 sys.path.append(str(project_folder))
 
 # Importando biblioteca Xplore DS
-from xplore_ds.environment.environment import XploreDSLocalhost
-from xplore_ds.environment.logging import XploreDSLogging
-from xplore_ds.data_handler.file import (
+from xploreds.environment.environment import XploreDSLocalhost
+from xploreds.environment.logging import XploreDSLogging
+from xploreds.data_handler.file import (
     load_dataframe_from_csv,
     save_dataframe_to_parquet,
 )
-from xplore_ds.data_schemas.dataset_config import (
+from xploreds.data_schemas.dataset_config import (
     VariableConfig,
     EncodingMethod,
     DatasetConfig,
 )
 
-from xplore_ds.variables.variables_encoding import encoder_variable_fit_transform
+from xploreds.variables.variables_encoding import encoder_variable_fit_transform
 
 # **********************************************************************************
 # Parametrizacao do script

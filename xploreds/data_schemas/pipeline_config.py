@@ -5,7 +5,7 @@ Xplore DS :: Pipeline configuration
 from pydantic import BaseModel
 from enum import Enum
 from typing import Optional
-from xplore_ds.data_schemas.model_io_config import ModelIOConfig
+from xploreds.data_schemas.model_io_config import ModelIOConfig
 
 
 class PipelineType(str, Enum):

@@ -27,7 +27,7 @@ import pandas as pd
 project_folder = Path(__file__).resolve().parents[2]
 sys.path.append(str(project_folder))
 
-from xplore_ds.data_visualization.data_viz_plotly import (
+from xploreds.data_visualization.data_viz_plotly import (
     plot_scatter_2d,
     plot_histogram,
     plot_confusion_matrix,

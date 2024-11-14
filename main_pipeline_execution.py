@@ -12,10 +12,10 @@ import argparse
 
 
 # Importando biblioteca Xplore DS
-from xplore_ds.environment.environment import XploreDSLocalhost
-from xplore_ds.environment.logging import XploreDSLogging
-from xplore_ds.data_handler.file import load_dictionary_from_json
-from xplore_ds.data_schemas.pipeline_config import (
+from xploreds.environment.environment import XploreDSLocalhost
+from xploreds.environment.logging import XploreDSLogging
+from xploreds.data_handler.file import load_dictionary_from_json
+from xploreds.data_schemas.pipeline_config import (
     PipelineConfig,
     PipelineType,
     PipelineModelTunningConfig,
@@ -73,7 +73,7 @@ class PipelineExecution:
                     **self.config.get("pipeline_model_tunning_config")
                 )
 
-            from xplore_ds.pipelines.model_tunning_pipeline_execution import (
+            from xploreds.pipelines.model_tunning_pipeline_execution import (
                 ModelTunningPipelineExecution,
             )
 

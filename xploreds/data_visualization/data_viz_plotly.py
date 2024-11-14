@@ -13,7 +13,7 @@ import os
 project_folder = Path(__file__).resolve().parents[2]
 sys.path.append(str(project_folder))
 
-from xplore_ds.data_handler.file import create_folder
+from xploreds.data_handler.file import create_folder
 
 
 def deploy_chart_in_navigator(fig: object) -> None:

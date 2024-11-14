@@ -288,7 +288,7 @@ def get_nrows_from_file(filepath) -> int:
     return i + 1
 
 
-def save_dataframe_to_parquet(data: pd, file_path: str, log: object) -> None:
+def save_dataframe_to_parquet(data: pd, file_path: str, log: object = None) -> None:
     """
     Save a pandas DataFrame to a Parquet file.
 
@@ -313,7 +313,8 @@ def save_dataframe_to_parquet(data: pd, file_path: str, log: object) -> None:
         - It's particularly useful for large datasets where the Parquet format
           provides efficient compression and columnar storage.
     """
-    log.info("Saving dataframe to parquet file: " + file_path)
+    if log:
+        log.info("Saving dataframe to parquet file...")
 
     # verificando se a pasta existe caso contrario criar a pasta
     create_folder(os.path.dirname(file_path))
@@ -322,6 +323,8 @@ def save_dataframe_to_parquet(data: pd, file_path: str, log: object) -> None:
 
     if log:
         log.info("Dataframe saved to parquet file: " + file_path)
+        log.info("Total samples: " + str(data.shape[0]))
+        log.info("Number of variables: " + str(data.shape[1]))
         log.info("Variables list: " + str(data.columns.values.tolist()))
 
 

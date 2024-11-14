@@ -13,14 +13,14 @@ import numpy as np
 project_folder = Path(__file__).resolve().parents[2]
 sys.path.append(str(project_folder))
 
-from xplore_ds.data_handler.file import create_folder
-from xplore_ds.variables.xploreds_model_io import XploreDSModelIO
-from xplore_ds.models.evaluate_model import (
+from xploreds.data_handler.file import create_folder
+from xploreds.variables.xploreds_model_io import XploreDSModelIO
+from xploreds.models.evaluate_model import (
     evaluate_regression,
     evaluate_binary_classification,
     evaluate_scoring_classification,
 )
-from xplore_ds.data_schemas.model_io_config import ApplicationType, ModelIOConfig
+from xploreds.data_schemas.model_io_config import ApplicationType, ModelIOConfig
 
 
 class XploreDSModel(ABC):

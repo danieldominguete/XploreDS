@@ -13,8 +13,8 @@ import pandas as pd
 project_folder = Path(__file__).resolve().parents[2]
 sys.path.append(str(project_folder))
 
-from xplore_ds.models.xploreds_model import XploreDSModel
-from xplore_ds.data_schemas.linear_regression_config import FitAlgorithm
+from xploreds.models.xploreds_model import XploreDSModel
+from xploreds.data_schemas.linear_regression_config import FitAlgorithm
 
 
 class XLinearRegression(XploreDSModel):

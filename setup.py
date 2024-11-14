@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="xploreds",
-    version="0.0.1",
+    version=__version__,
     url="https://github.com/danieldominguete/XploreDS",
     license="MIT License",
     author="Daniel Dominguete",
@@ -16,4 +16,5 @@ setup(
     description="Easy-to-use package of the most relevant Data Science techniques.",
     packages=["xploreds"],
     install_requires=["numpy", "pandas"],
+    python_requires=">=3.9",
 )

@@ -12,3 +12,6 @@ flake8
 python-dotenv
 lxml
 commitizen
+setuptools
+wheel
+twine

@@ -1,43 +1,46 @@
-# XploreDS
+# About XploreDS
 
-Repository of examples of Data Science cookbooks and library.
-
-## Repository Organization
-
-- data: folder of data files
-- src: source codes with examples
-- lib: library of encapsulted methods
-- docs: most relevant technical documents
-- guides: "how to" documentation of main tools
-- output: folder for outputs produced by scripts
-- static: static files of project 
-- tests: test scripts  
-  
-## Setup Environment
-
-1 - Install virtual environment package
-
-`pip install virtualenv`
-
-2 - Create the virtual environment
-
-`virtualenv XploreDS`
-
-3 - Activate the virtual environment
-
-Mac OS/Linux: `source XploreDS/bin/activate`
-
-Windows: `XploreDS\Scripts\activate`
-
-4 - Install requirement packages
-
-`pip install -r requirements`
-
-5 - Create .env file and/or set environment variables
-
-`PYTHON_WARNINGS="ignore"`
-
+Easy-to-use package of the most relevant Data Science techniques.
  
+## Getting Started
+
+### Dependencies
+
+You need Python 3.9 or later to use **XploreDS**. You can find it at [python.org](https://www.python.org/).
+
+### Library installation
+
+For just use the library XploreDS in your project:
+
+```
+pip install xploreds
+```
+
+### Cookbooks 
+
+For use the boilerplates with examples of XploreDS applications:
+
+Clone this repo to your local machine using:
+
+```
+git clone https://github.com/danieldominguete/XploreDS
+```
+
+and explore the `src/cookbook` for standalone scripts or execute the customized pipeline execution with 
+
+```
+python main_pipeline_execution.py -f pipeline_config/CONFIG_FILE.json
+```
+
+# Main Features
+
+- License example
+
+# Bug Reports
+
+Bug reports can be submitted to the issue tracker:
+
+https://github.com/danieldominguete/XploreDS/issues
 
 # Changelog
 

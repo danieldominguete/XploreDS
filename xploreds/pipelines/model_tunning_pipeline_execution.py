@@ -32,7 +32,7 @@ from xploreds.data_schemas.logistic_regression_config import (
 )
 from xploreds.data_schemas.model_io_config import (
     ModelIOConfig,
-    VariableIOConfig,
+    VariableConfig,
     ScalingMethod,
     ApplicationType,
 )

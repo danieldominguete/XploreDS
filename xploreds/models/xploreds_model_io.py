@@ -15,7 +15,7 @@ sys.path.append(str(project_folder))
 from xploreds.data_handler.file import create_folder
 from xploreds.data_schemas.model_io_config import (
     ScalingMethod,
-    VariableIOConfig,
+    VariableConfig,
 )
 from xploreds.variables.variables_scaling import (
     scaler_variable_fit,
@@ -55,7 +55,7 @@ class XploreDSModelVariable:
 
         data, self.name_scaled = scaler_variable_transform(
             data=data,
-            feature_column_name=self.name,
+            variable_column_name=self.name,
             scaler=self.scaler,
             log=self.log,
         )
@@ -69,7 +69,7 @@ class XploreDSModelVariable:
 
         data, self.name_scaled = scaler_variable_transform(
             data=data,
-            feature_column_name=self.name,
+            variable_column_name=self.name,
             scaler=self.scaler,
             log=self.log,
         )
@@ -84,10 +84,10 @@ class XploreDSModelIO:
 
     def __init__(
         self,
-        features_config: VariableIOConfig = None,
-        target_config: VariableIOConfig = None,
-        target_categorical_index: list[VariableIOConfig] = [],
-        target_textual: list[VariableIOConfig] = [],
+        features_config: VariableConfig = None,
+        target_config: VariableConfig = None,
+        target_categorical_index: list[VariableConfig] = [],
+        target_textual: list[VariableConfig] = [],
         target_index_to_label: dict[int, str] = {},
         log: object = None,
     ) -> None:

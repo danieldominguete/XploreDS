@@ -14,7 +14,7 @@ project_folder = Path(__file__).resolve().parents[2]
 sys.path.append(str(project_folder))
 
 from xploreds.data_handler.file import create_folder
-from xploreds.variables.xploreds_model_io import XploreDSModelIO
+from xploreds.models.xploreds_model_io import XploreDSModelIO
 from xploreds.models.evaluate_model import (
     evaluate_regression,
     evaluate_binary_classification,

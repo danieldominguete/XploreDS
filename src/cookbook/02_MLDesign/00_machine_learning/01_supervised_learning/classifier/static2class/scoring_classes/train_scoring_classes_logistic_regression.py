@@ -30,7 +30,7 @@ from xploreds.data_schemas.logistic_regression_config import (
 )
 from xploreds.data_schemas.model_io_config import (
     ModelIOConfig,
-    VariableIOConfig,
+    VariableConfig,
     ScalingMethod,
     ApplicationType,
 )
@@ -78,37 +78,37 @@ input_dataset_test_file_path = (
 # ----------------------------------------------------------------------------------
 # Configuracao de variaveis de I/O do modelo
 
-fixed_acidity = VariableIOConfig(
+fixed_acidity = VariableConfig(
     name="fixed acidity", scaling_method=ScalingMethod.none_scaler
 )
-volatile_acidity = VariableIOConfig(
+volatile_acidity = VariableConfig(
     name="volatile acidity", scaling_method=ScalingMethod.min_max_scaler
 )
-citric_acid = VariableIOConfig(
+citric_acid = VariableConfig(
     name="citric acid", scaling_method=ScalingMethod.mean_std_scaler
 )
-residual_sugar = VariableIOConfig(
+residual_sugar = VariableConfig(
     name="residual sugar", scaling_method=ScalingMethod.none_scaler
 )
-chlorides = VariableIOConfig(name="chlorides", scaling_method=ScalingMethod.none_scaler)
-free_sulfur_dioxide = VariableIOConfig(
+chlorides = VariableConfig(name="chlorides", scaling_method=ScalingMethod.none_scaler)
+free_sulfur_dioxide = VariableConfig(
     name="free sulfur dioxide", scaling_method=ScalingMethod.none_scaler
 )
-total_sulfur_dioxide = VariableIOConfig(
+total_sulfur_dioxide = VariableConfig(
     name="total sulfur dioxide", scaling_method=ScalingMethod.none_scaler
 )
-density = VariableIOConfig(name="density", scaling_method=ScalingMethod.none_scaler)
-pH_label_acid = VariableIOConfig(
+density = VariableConfig(name="density", scaling_method=ScalingMethod.none_scaler)
+pH_label_acid = VariableConfig(
     name="pH_label_acid",
     scaling_method=ScalingMethod.none_scaler,
 )
-sulphates = VariableIOConfig(name="sulphates", scaling_method=ScalingMethod.none_scaler)
-alcohol = VariableIOConfig(name="alcohol", scaling_method=ScalingMethod.none_scaler)
+sulphates = VariableConfig(name="sulphates", scaling_method=ScalingMethod.none_scaler)
+alcohol = VariableConfig(name="alcohol", scaling_method=ScalingMethod.none_scaler)
 
-quality_label_bad = VariableIOConfig(
+quality_label_bad = VariableConfig(
     name="quality_label_bad", scaling_method=ScalingMethod.none_scaler
 )
-quality_label = VariableIOConfig(name="quality_label")
+quality_label = VariableConfig(name="quality_label")
 
 # ----------------------------------------------------------------------------------
 # Configurando a base de conhecimento "ground thruth" para tunning do modelo

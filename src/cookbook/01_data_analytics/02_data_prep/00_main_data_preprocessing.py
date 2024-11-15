@@ -1,5 +1,5 @@
 """
-Xplore DS :: General cookbook script template
+Xplore DS :: Main dataset preprocessing script template
 """
 
 # Importando bibliotecas nativas
@@ -7,7 +7,6 @@ import sys
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-import numpy as np
 
 
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib
@@ -19,9 +18,12 @@ from xploreds.environment.environment import XploreDSLocalhost
 from xploreds.environment.logging import XploreDSLogging
 from xploreds.data_handler.file import (
     load_dataframe_from_parquet,
+    save_dataframe_to_parquet,
 )
-from xploreds.data_visualization.data_viz_plotly import (
-    plot_histogram,
+from xploreds.data_handler.dataframe import (
+    rename_columns,
+    normalize_not_valid_values,
+    create_unique_id,
 )
 
 # ==================================================================================
@@ -49,49 +51,43 @@ log.title("Script setup")
 input_dataset_file_path = "data/credit-g/raw/credit-g.parquet"
 
 # Configuracao de dados de saida
-view_plots = True
-save_plots = True
+output_dataset_file_path = "data/credit-g/curated/credit-g.parquet"
+
+# Parametros de negocio
+columns_to_rename = {}
+
+# Criacao de chave unica
+id_column_name = "id"
 
 # ==================================================================================
 # Carregando base de dados
 # ==================================================================================
 
 log.title("Loading datasets")
+
 data = load_dataframe_from_parquet(file_path=input_dataset_file_path, log=log)
 
 # ==================================================================================
 # Regras de negócio
 # ==================================================================================
+log.title("Preprocessing dataset")
 
-# listando variaveis por natureza
-categorical_columns = data.select_dtypes(["category"]).columns
-numerical_columns = data.select_dtypes(include=[np.number]).columns
+# Rename columns
+data = rename_columns(data=data, columns_to_rename=columns_to_rename, log=log)
 
-# plotando visualizacoes das variaveis categoricas
-for v in categorical_columns:
+# Normalizar not valid values
+data = normalize_not_valid_values(data=data, log=log)
 
-    log.info("Ploting visualization of " + v + "...")
-    plot_histogram(
-        data=data,
-        x_col_name=v,
-        title="Histogram of " + v,
-        view_chart=view_plots,
-        save_chart=save_plots,
-        file_path_image=log.log_path + "/histogram_" + v + ".png",
-    )
+# Criar identificador unico
+data = create_unique_id(data=data, id_column_name=id_column_name, log=log)
 
-# plotando visualizacoes das variaveis numericas
-for v in numerical_columns:
+# ==================================================================================
+# Salvando artefatos de saida
+# ==================================================================================
 
-    log.info("Ploting visualization of " + v + "...")
-    plot_histogram(
-        data=data,
-        x_col_name=v,
-        title="Histogram of " + v,
-        view_chart=view_plots,
-        save_chart=save_plots,
-        file_path_image=log.log_path + "/histogram_" + v + ".png",
-    )
+log.title("Saving output artifacts")
+
+save_dataframe_to_parquet(data=data, file_path=output_dataset_file_path, log=log)
 
 # ==================================================================================
 # Encerramento do script

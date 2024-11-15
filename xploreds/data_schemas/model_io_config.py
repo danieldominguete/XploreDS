@@ -22,16 +22,23 @@ class ScalingMethod(str, Enum):
     mean_std_scaler = "mean_std_scaler"
 
 
-class VariableIOConfig(BaseModel):
+class EncodingMethod(str, Enum):
+
+    none_encoder = "none_encoding"
+    one_hot_encoder = "one_hot_encoder"
+
+
+class VariableConfig(BaseModel):
     name: str
     scaling_method: ScalingMethod = ScalingMethod.none_scaler
+    encoding_method: EncodingMethod = EncodingMethod.none_encoder
 
 
 class ModelIOConfig(BaseModel):
 
     application_type: ApplicationType
-    features: list[VariableIOConfig]
-    target_numerical: list[VariableIOConfig]
-    target_categorical_label: VariableIOConfig = None
-    target_categorical_index: VariableIOConfig = None
+    features: list[VariableConfig]
+    target_numerical: list[VariableConfig]
+    target_categorical_label: VariableConfig = None
+    target_categorical_index: VariableConfig = None
     target_categorical_index_to_label: dict[int, str] = {}

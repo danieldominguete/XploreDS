@@ -37,3 +37,31 @@
 
 - Min Max Scaling
 - Mean Std Scaling
+
+## Master Table Bulding
+
+- Join independent datasets
+
+## Data Analysis
+
+## Dataset Bulding
+
+# Models Design
+
+## Machine Learning
+
+### Unsupervised Learning
+
+### Supervised Learning
+
+#### Binary Classifier
+
+##### Scoring
+
+##### Classifier
+
+#### Multiclass Classifier
+
+#### Regression Estimator
+
+### Reinforcement Learning

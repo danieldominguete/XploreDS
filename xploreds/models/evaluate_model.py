@@ -364,8 +364,8 @@ def plot_evaluation_binary_classification_results(
     )
 
     # Criando um estimador "no skill" de baseline (y predict = classe de maior amostragem)
-    TODO FAZER ISSO AKI!!
-    https://machinelearningmastery.com/roc-curves-and-precision-recall-curves-for-classification-in-python/ 
+    # TODO FAZER ISSO AKI!!
+    # https://machinelearningmastery.com/roc-curves-and-precision-recall-curves-for-classification-in-python/
 
     # Precision Recall Curve
     log.info("Plotting Precision Recall Curve")

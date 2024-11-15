@@ -63,6 +63,10 @@ log.title("Loading datasets")
 
 data = load_dataframe_from_parquet(file_path=reference_dataset_file_path, log=log)
 
+# ==================================================================================
+# Regras de negócio
+# ==================================================================================
+
 for dataset_file_path in aditional_datasets_file_path:
 
     dataset = load_dataframe_from_parquet(file_path=dataset_file_path, log=log)
@@ -78,16 +82,14 @@ for dataset_file_path in aditional_datasets_file_path:
     data = data.merge(dataset, on=primary_key, how="left")
 
 # ==================================================================================
-# Regras de negócio
-# ==================================================================================
-
-# ==================================================================================
 # Salvando artefatos de saida
 # ==================================================================================
 
 log.title("Saving output artifacts")
 
 save_dataframe_to_parquet(file_path=output_dataset_file_path, data=data, log=log)
+
+
 
 # ==================================================================================
 # Encerramento do script

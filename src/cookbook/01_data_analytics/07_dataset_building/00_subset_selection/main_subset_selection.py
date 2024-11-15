@@ -16,10 +16,13 @@ sys.path.append(str(project_folder))
 from xploreds.environment.environment import XploreDSLocalhost
 from xploreds.environment.logging import XploreDSLogging
 from xploreds.data_handler.file import (
-    load_dataframe_from_csv,
+    load_dataframe_from_parquet,
     save_dataframe_to_parquet,
 )
-from sklearn.model_selection import train_test_split
+from xploreds.data_handler.subsets import (
+    create_train_test_data_subsets,
+    generate_features_config_default,
+)
 
 
 # ==================================================================================
@@ -44,10 +47,7 @@ log.init_run()
 log.title("Script setup")
 
 # Configuracao de dados de entrada
-input_dataset_file_path = (
-    "data/projects/raw/tabular_data/wine_quality/winequality-red.csv"
-)
-input_dataset_file_path_separator = ","
+input_dataset_file_path = "data/credit-g/processed/credit-g_master_table.parquet"
 
 # Selecao dos subsets
 proportion_test_samples = 0.1
@@ -55,14 +55,8 @@ shuffle = False
 random_state = 100
 
 # Configuracao de dados de saida
-output_folder = "output"
-output_dataset_train_file_path = (
-    "data/projects/stage/wine_quality/wine_quality_train.parquet"
-)
-output_dataset_test_file_path = (
-    "data/projects/stage/wine_quality/wine_quality_test.parquet"
-)
-
+output_dataset_train_file_path = "data/credit-g/processed/credit-g_train.parquet"
+output_dataset_test_file_path = "data/credit-g/processed/credit-g_test.parquet"
 
 # ==================================================================================
 # Carregando base de dados
@@ -70,22 +64,19 @@ output_dataset_test_file_path = (
 
 log.title("Loading datasets")
 
-data = load_dataframe_from_csv(
-    filepath=input_dataset_file_path,
-    separator=input_dataset_file_path_separator,
-    log=log,
-)
+data = load_dataframe_from_parquet(file_path=input_dataset_file_path, log=log)
 
 # ==================================================================================
 # Regras de negócio
 # ==================================================================================
 
 # Realizando o split dos datasets
-data_train, data_test = train_test_split(
-    data,
-    test_size=proportion_test_samples,
+data_train, data_test = create_train_test_data_subsets(
+    data=data,
+    proportion_test_samples=proportion_test_samples,
     shuffle=shuffle,
     random_state=random_state,
+    log=log,
 )
 
 # ==================================================================================
@@ -102,6 +93,12 @@ save_dataframe_to_parquet(
 
 save_dataframe_to_parquet(
     data=data_test, file_path=output_dataset_test_file_path, log=log
+)
+
+generate_features_config_default(
+    data=data_train,
+    file_path="data/credit-g/processed/credit-g_features_config_template.json",
+    log=log,
 )
 
 # ==================================================================================

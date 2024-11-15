@@ -11,7 +11,7 @@ import numpy as np
 
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib em projeto local
 # Futuramente substituir pois a lib estará já instalada no .venv
-project_folder = Path(__file__).resolve().parents[8]
+project_folder = Path(__file__).resolve().parents[7]
 sys.path.append(str(project_folder))
 
 # Importando biblioteca Xplore DS
@@ -68,70 +68,154 @@ random_state = 100
 # ----------------------------------------------------------------------------------
 # Configuracao de master table de entrada
 
-input_dataset_train_file_path = (
-    "data/projects/stage/wine_quality/winequality-red-processed-train.parquet"
-)
-input_dataset_test_file_path = (
-    "data/projects/stage/wine_quality/winequality-red-processed-test.parquet"
-)
+input_dataset_train_file_path = "data/credit-g/processed/credit-g_train.parquet"
+input_dataset_test_file_path = "data/credit-g/processed/credit-g_test.parquet"
 
 # ----------------------------------------------------------------------------------
 # Configuracao de variaveis de I/O do modelo
+features = [
+    VariableConfig(name="duration", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(name="credit_amount", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(
+        name="installment_commitment", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(name="residence_since", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(name="age", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(name="num_dependents", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(
+        name="checking_status_0<=X<200", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(name="checking_status_<0", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(
+        name="checking_status_>=200", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(
+        name="checking_status_no checking", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(
+        name="credit_history_all paid", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(
+        name="credit_history_critical/other existing credit",
+        scaling_method=ScalingMethod.none_scaler,
+    ),
+    VariableConfig(
+        name="credit_history_delayed previously",
+        scaling_method=ScalingMethod.none_scaler,
+    ),
+    VariableConfig(
+        name="credit_history_existing paid", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(
+        name="credit_history_no credits/all paid",
+        scaling_method=ScalingMethod.none_scaler,
+    ),
+    VariableConfig(name="purpose_business", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(
+        name="purpose_domestic appliance", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(name="purpose_education", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(
+        name="purpose_furniture/equipment", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(name="purpose_new car", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(name="purpose_other", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(name="purpose_radio/tv", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(name="purpose_repairs", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(name="purpose_retraining", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(name="purpose_used car", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(
+        name="savings_status_100<=X<500", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(
+        name="savings_status_500<=X<1000", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(
+        name="savings_status_<100", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(
+        name="savings_status_>=1000", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(
+        name="savings_status_no known savings", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(name="employment_1<=X<4", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(name="employment_4<=X<7", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(name="employment_<1", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(name="employment_>=7", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(
+        name="employment_unemployed", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(
+        name="personal_status_female div/dep/mar",
+        scaling_method=ScalingMethod.none_scaler,
+    ),
+    VariableConfig(
+        name="personal_status_male div/sep", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(
+        name="personal_status_male mar/wid", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(
+        name="personal_status_male single", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(
+        name="other_parties_co applicant", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(
+        name="other_parties_guarantor", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(name="other_parties_none", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(
+        name="property_magnitude_car", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(
+        name="property_magnitude_life insurance",
+        scaling_method=ScalingMethod.none_scaler,
+    ),
+    VariableConfig(
+        name="property_magnitude_no known property",
+        scaling_method=ScalingMethod.none_scaler,
+    ),
+    VariableConfig(
+        name="property_magnitude_real estate", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(
+        name="other_payment_plans_bank", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(
+        name="other_payment_plans_none", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(
+        name="other_payment_plans_stores", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(name="housing_for free", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(name="housing_own", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(name="housing_rent", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(
+        name="job_high qualif/self emp/mgmt", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(name="job_skilled", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(
+        name="job_unemp/unskilled non res", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(
+        name="job_unskilled resident", scaling_method=ScalingMethod.none_scaler
+    ),
+    VariableConfig(name="own_telephone_none", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(name="own_telephone_yes", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(name="foreign_worker_no", scaling_method=ScalingMethod.none_scaler),
+    VariableConfig(name="foreign_worker_yes", scaling_method=ScalingMethod.none_scaler),
+]
 
-fixed_acidity = VariableConfig(
-    name="fixed acidity", scaling_method=ScalingMethod.none_scaler
-)
-volatile_acidity = VariableConfig(
-    name="volatile acidity", scaling_method=ScalingMethod.min_max_scaler
-)
-citric_acid = VariableConfig(
-    name="citric acid", scaling_method=ScalingMethod.mean_std_scaler
-)
-residual_sugar = VariableConfig(
-    name="residual sugar", scaling_method=ScalingMethod.none_scaler
-)
-chlorides = VariableConfig(name="chlorides", scaling_method=ScalingMethod.none_scaler)
-free_sulfur_dioxide = VariableConfig(
-    name="free sulfur dioxide", scaling_method=ScalingMethod.none_scaler
-)
-total_sulfur_dioxide = VariableConfig(
-    name="total sulfur dioxide", scaling_method=ScalingMethod.none_scaler
-)
-density = VariableConfig(name="density", scaling_method=ScalingMethod.none_scaler)
-pH_label_acid = VariableConfig(
-    name="pH_label_acid",
-    scaling_method=ScalingMethod.none_scaler,
-)
-sulphates = VariableConfig(name="sulphates", scaling_method=ScalingMethod.none_scaler)
-alcohol = VariableConfig(name="alcohol", scaling_method=ScalingMethod.none_scaler)
-
-quality_label_bad = VariableConfig(
-    name="quality_label_bad", scaling_method=ScalingMethod.none_scaler
-)
-quality_label = VariableConfig(name="quality_label")
-
-# ----------------------------------------------------------------------------------
-# Configurando a base de conhecimento "ground thruth" para tunning do modelo
 
 model_io_config = ModelIOConfig(
     application_type=ApplicationType.binary_classification,
-    features=[
-        volatile_acidity,
-        citric_acid,
-        residual_sugar,
-        chlorides,
-        free_sulfur_dioxide,
-        total_sulfur_dioxide,
-        density,
-        pH_label_acid,
-        sulphates,
-        alcohol,
-        fixed_acidity,
-    ],
-    target_numerical=[quality_label_bad],
-    target_categorical_index=quality_label_bad,
-    target_categorical_label=quality_label,
-    target_categorical_index_to_label={0: "bad", 1: "good"},
+    features=features,
+    target_numerical=[VariableConfig(name="class_bad")],
+    target_categorical_index=VariableConfig(name="class_bad"),
+    target_categorical_label=VariableConfig(name="class"),
+    target_categorical_index_to_label={1: "bad", 0: "good"},
 )
 
 # ----------------------------------------------------------------------------------
@@ -154,14 +238,12 @@ tunning_config = LogisticRegressionHyperparameters(
 results_folder = log.log_path
 
 output_dataset_train_predict_file_path = (
-    results_folder + "data/wine_quality_train_classification_predict.parquet"
+    results_folder + "data/credit-g/processed/credit-g_train_predict.parquet"
 )
 output_dataset_test_predict_file_path = (
-    results_folder + "data/wine_quality_test_classification_predict.parquet"
+    results_folder + "data/credit-g/processed/credit-g_test_predict.parquet"
 )
-output_model_file_path = (
-    results_folder + "models/wine_quality_logistic_regression.joblib"
-)
+output_model_file_path = results_folder + "models/credit-g_logistic_regression.joblib"
 
 view_charts = True
 save_charts = True

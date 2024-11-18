@@ -44,6 +44,23 @@
 
 ## Data Analysis
 
+### Exploratory Analysis
+
+#### Descriptive Analysis
+
+- Numerical Variables
+  - Mean
+- Categorical Variables
+  - Unique
+
+#### Trend Analysis
+
+- Numerical Variables
+  - Line Trend view
+  - Box Plot View
+- Categorical Variables
+  - 
+
 ## Dataset Bulding
 
 # Models Design
@@ -56,9 +73,16 @@
 
 #### Binary Classifier
 
+- Logistic Regression
+
 ##### Scoring
 
+- 
+
 ##### Classifier
+
+- Confusion Matrix
+- ROC Curve
 
 #### Multiclass Classifier
 

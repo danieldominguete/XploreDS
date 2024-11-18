@@ -1,5 +1,5 @@
 """
-Xplore DS :: Main dataset preprocessing script template
+Xplore DS :: General cookbook script template
 """
 
 # Importando bibliotecas nativas
@@ -7,6 +7,7 @@ import sys
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+import numpy as np
 
 
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib
@@ -16,14 +17,8 @@ sys.path.append(str(project_folder))
 # Importando biblioteca Xplore DS
 from xploreds.environment.environment import XploreDSLocalhost
 from xploreds.environment.logging import XploreDSLogging
-from xploreds.data_handler.file import (
-    load_dataframe_from_parquet,
-    save_dataframe_to_parquet,
-)
-from xploreds.data_handler.dataframe import (
-    rename_columns,
-    normalize_not_valid_values,
-)
+from xploreds.data_handler.file import load_dataframe_from_parquet
+from xploreds.data_analysis.eda import descriptive_analysis, trend_analysis
 
 # ==================================================================================
 # Setup do script
@@ -47,13 +42,18 @@ log.init_run()
 log.title("Script setup")
 
 # Configuracao de dados de entrada
-input_dataset_file_path = "data/credit-g/raw/credit-g.parquet"
+input_dataset_file_path = "data/credit-g/curated/credit-g.parquet"
 
-# Configuracao de dados de saida
-output_dataset_file_path = "data/credit-g/curated/credit-g.parquet"
+# Analises exploratorias
+exec_descritive_analysis = True
 
-# Parametros de negocio
-columns_to_rename = {}
+exec_trend_analysis = True
+trend_analysis_date_ref = "transaction_date"
+trend_analysis_date_trunc = "M"
+
+view_plots = True
+save_plots = True
+save_analysis = True
 
 # ==================================================================================
 # Carregando base de dados
@@ -66,22 +66,41 @@ data = load_dataframe_from_parquet(file_path=input_dataset_file_path, log=log)
 # ==================================================================================
 # Regras de negócio
 # ==================================================================================
-log.title("Preprocessing dataset")
 
-# Rename columns
-data = rename_columns(data=data, columns_to_rename=columns_to_rename, log=log)
+if exec_descritive_analysis:
+    log.title("Descriptive analysis")
+    descriptive_analysis(
+        data=data,
+        numerical_variables=data.select_dtypes(include=[np.number]).columns,
+        categorical_variables=data.select_dtypes(["category"]).columns,
+        view_plots=view_plots,
+        save_plots=save_plots,
+        save_analysis=save_analysis,
+        output_folder_path=log.log_path,
+        prefix_label="eda_",
+        log=log,
+    )
 
-# Normalizar not valid values
-data = normalize_not_valid_values(data=data, log=log)
-
-
+if exec_trend_analysis:
+    log.title("Trend analysis")
+    trend_analysis(
+        data=data,
+        date_col_name=trend_analysis_date_ref,
+        date_trunc_by=trend_analysis_date_trunc,
+        numerical_variables=data.select_dtypes(include=[np.number]).columns,
+        categorical_variables=data.select_dtypes(["category"]).columns,
+        view_plots=view_plots,
+        save_plots=save_plots,
+        save_analysis=save_analysis,
+        output_folder_path=log.log_path,
+        prefix_label="trend_",
+        log=log,
+    )
 # ==================================================================================
 # Salvando artefatos de saida
 # ==================================================================================
 
 log.title("Saving output artifacts")
-
-save_dataframe_to_parquet(data=data, file_path=output_dataset_file_path, log=log)
 
 # ==================================================================================
 # Encerramento do script

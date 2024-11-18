@@ -121,8 +121,6 @@ class XploreDSLogging:
         Returns:
             None
 
-        Example:
-            >>> self.info("Database connection established")
         """
 
         logging.info(message)
@@ -139,9 +137,6 @@ class XploreDSLogging:
 
         Returns:
             None
-
-        Example:
-            >>> self.warning("Low disk space detected")
         """
         logging.warning(message)
 
@@ -157,9 +152,6 @@ class XploreDSLogging:
 
         Returns:
             None
-
-        Example:
-            >>> self.error("Database connection failed")
         """
         logging.error(message)
 
@@ -172,9 +164,6 @@ class XploreDSLogging:
 
         Returns:
             None
-
-        Example:
-            >>> self.info("Database connection established")
         """
         logging.info(
             "**********************************************************************************"
@@ -182,6 +171,42 @@ class XploreDSLogging:
         logging.info(message)
         logging.info(
             "**********************************************************************************"
+        )
+
+    def subtitle(self, message: str) -> None:
+        """
+        Log an subtitle message.
+
+        Args:
+            message (str): The message to be logged.
+
+        Returns:
+            None
+        """
+        logging.info(
+            "=================================================================================="
+        )
+        logging.info(message)
+        logging.info(
+            "=================================================================================="
+        )
+
+    def section(self, message: str) -> None:
+        """
+        Log an section message.
+
+        Args:
+            message (str): The message to be logged.
+
+        Returns:
+            None
+        """
+        logging.info(
+            "----------------------------------------------------------------------------------"
+        )
+        logging.info(message)
+        logging.info(
+            "----------------------------------------------------------------------------------"
         )
 
     def init_run(self) -> None:

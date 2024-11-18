@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 import ssl
 from sklearn.datasets import fetch_openml
 import pandas as pd
+import numpy as np
 
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib
 project_folder = Path(__file__).resolve().parents[3]
@@ -19,7 +20,7 @@ sys.path.append(str(project_folder))
 from xploreds.environment.environment import XploreDSLocalhost
 from xploreds.environment.logging import XploreDSLogging
 from xploreds.data_handler.file import save_dataframe_to_parquet
-from xploreds.data_handler.dataframe import describe_dataframe
+from xploreds.data_handler.dataframe import describe_dataframe, create_unique_id
 
 # ==================================================================================
 # Setup do script
@@ -69,6 +70,14 @@ log.info("Dataset features: " + str(dataset.details))
 # construindo dataframe unico
 data = pd.concat([dataset.data, dataset.target], axis=1)
 describe_dataframe(data, log=log)
+
+# incluindo coluna de data para desenvolvimento de funcionalidades
+data["transaction_date"] = np.random.choice(
+    pd.date_range("2023-01-01", "2023-12-31"), size=len(data)
+)
+
+# Criar identificador unico
+data = create_unique_id(data=data, id_column_name="id", log=log)
 
 # ==================================================================================
 # Salvando artefatos de saida

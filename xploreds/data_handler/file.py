@@ -346,3 +346,45 @@ def load_dataframe_from_parquet(file_path: str, log: object = None) -> pd:
         log.info("Loading dataframe from parquet file: " + file_path)
 
     return pd.read_parquet(file_path)
+
+
+def save_dataframe_to_excel(
+    data: pd, file_path: str, sheet_name: str = "data", log: object = None
+) -> None:
+    """
+    Save a pandas DataFrame to a Excel file.
+
+    This function takes a pandas DataFrame and a file path, and saves the DataFrame
+    to a Excel file at the specified path. It's useful for efficiently storing
+    large datasets in a columnar format.
+
+    Args:
+        data (pandas.DataFrame): The DataFrame to save.
+        file_path (str): The path where the Parquet file will be saved.
+
+    Returns:
+        None: This function does not return anything. It saves the DataFrame to a file.
+
+    Raises:
+        IOError: If there's an error opening or writing to the file.
+            The specific exception type depends on what went wrong
+            (e.g., FileNotFoundError, PermissionError).
+
+    Note:
+        - This function uses the pandas to_parquet method to save the DataFrame.
+        - It's particularly useful for large datasets where the Parquet format
+          provides efficient compression and columnar storage.
+    """
+    if log:
+        log.info("Saving dataframe to excel file...")
+
+    # verificando se a pasta existe caso contrario criar a pasta
+    create_folder(os.path.dirname(file_path))
+
+    data.to_excel(file_path, sheet_name=sheet_name, index=False)
+
+    if log:
+        log.info("Dataframe saved to excel file: " + file_path)
+        log.info("Total samples: " + str(data.shape[0]))
+        log.info("Number of variables: " + str(data.shape[1]))
+        log.info("Variables list: " + str(data.columns.values.tolist()))

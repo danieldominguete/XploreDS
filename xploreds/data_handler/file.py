@@ -257,6 +257,45 @@ def load_dictionary_from_json(path_file: str) -> dict:
     return data
 
 
+def save_dictionary_to_json(data: dict, file_path: str, log=None) -> None:
+    """
+    Save parameters to a JSON file.
+
+    This function takes a dictionary and a file path, and attempts to save the
+    dictionary as a JSON file at the specified path.
+
+    Args:
+        data (dict): The dictionary containing the parameters to be saved.
+        file_path (str): The path where the JSON file will be saved.
+
+    Returns:
+        None: This function does not return anything. It saves the dictionary to a file.
+
+    Raises:
+        IOError: If there's an error opening or writing to the file.
+            The specific exception type depends on what went wrong
+            (e.g., FileNotFoundError, PermissionError).
+
+    Note:
+        - This function uses the json.dump() method to save the dictionary as JSON.
+        - It's particularly useful for saving configuration or parameter files.
+    """
+
+    if log:
+        log.info("Saving dictionary to json file...")
+
+    # verificando se a pasta existe caso contrario criar a pasta
+    create_folder(os.path.dirname(file_path))
+
+    try:
+        with open(file_path, "w") as json_file:
+            json.dump(data, json_file, indent=4)
+        if log:
+            log.info("Dictionary saved to json file: " + file_path)
+    except Exception as e:
+        raise IOError(f"Error saving dictionary to JSON file: {e}")
+
+
 def get_nrows_from_file(filepath) -> int:
     """
     Get the number of rows in a file.

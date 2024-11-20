@@ -11,15 +11,12 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics import median_absolute_error
 from sklearn.metrics import r2_score
 from sklearn.metrics import accuracy_score
-from sklearn.metrics import confusion_matrix
 from sklearn.metrics import balanced_accuracy_score
-from sklearn.metrics import precision_recall_curve
-from sklearn.metrics import f1_score
-from sklearn.metrics import recall_score
 from sklearn.metrics import classification_report
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, auc
 from sklearn.metrics import confusion_matrix
-from sklearn.metrics import roc_curve
+from sklearn.metrics import roc_curve, precision_recall_curve
+from scipy.stats import ks_2samp
 import numpy as np
 import pandas as pd
 
@@ -34,52 +31,81 @@ from xploreds.data_visualization.data_viz_plotly import (
     plot_precision_recall_curve,
     plot_roc_curve,
 )
+from xploreds.data_handler.file import save_dictionary_to_json
 
 
-def get_mean_absolute_error(y_true, y_pred):
-    return mean_absolute_error(y_true=y_true, y_pred=y_pred)
+def get_mean_absolute_error(y_numerical_true, y_numerical_pred):
+    return mean_absolute_error(y_true=y_numerical_true, y_pred=y_numerical_pred)
 
 
-def get_explained_variance_score(y_true, y_pred):
-    return explained_variance_score(y_true=y_true, y_pred=y_pred)
+def get_explained_variance_score(y_numerical_true, y_numerical_pred):
+    return explained_variance_score(y_true=y_numerical_true, y_pred=y_numerical_pred)
 
 
-def get_max_error_score(y_true, y_pred):
-    return max_error(y_true=y_true, y_pred=y_pred)
+def get_max_error_score(y_numerical_true, y_numerical_pred):
+    return max_error(y_true=y_numerical_true, y_pred=y_numerical_pred)
 
 
-def get_mse_error_score(y_true, y_pred):
-    return mean_squared_error(y_true=y_true, y_pred=y_pred)
+def get_mse_error_score(y_numerical_true, y_numerical_pred):
+    return mean_squared_error(y_true=y_numerical_true, y_pred=y_numerical_pred)
 
 
-def get_mdae_error_score(y_true, y_pred):
-    return median_absolute_error(y_true=y_true, y_pred=y_pred)
+def get_mdae_error_score(y_numerical_true, y_numerical_pred):
+    return median_absolute_error(y_true=y_numerical_true, y_pred=y_numerical_pred)
 
 
-def get_r2_score(y_true, y_pred):
-    return r2_score(y_true=y_true, y_pred=y_pred)
+def get_r2_score(y_numerical_true, y_numerical_pred):
+    return r2_score(y_true=y_numerical_true, y_pred=y_numerical_pred)
 
 
-def get_accuracy_score(y_true, y_pred):
-    return accuracy_score(y_true=y_true, y_pred=y_pred)
+def get_accuracy_score(y_numerical_true, y_numerical_pred):
+    return accuracy_score(y_true=y_numerical_true, y_pred=y_numerical_pred)
 
 
-def get_balanced_accuracy_score(y_true, y_pred):
-    return balanced_accuracy_score(y_true=y_true, y_pred=y_pred)
+def get_balanced_accuracy_score(y_numerical_true, y_numerical_pred):
+    return balanced_accuracy_score(y_true=y_numerical_true, y_pred=y_numerical_pred)
 
 
-def get_classification_report(y_true, y_pred, target_classes):
+def get_classification_report(y_categorical_label_true, y_categorical_label_pred):
     return classification_report(
-        y_true=y_true, y_pred=y_pred, target_names=target_classes
+        y_true=y_categorical_label_true,
+        y_pred=y_categorical_label_pred,
     )
 
 
-def get_confusion_matrix(data, y_true_labels_col_name, y_pred_labels_col_name, labels):
+def get_roc_auc_score_for_binary_classifier(y_numerical_true, y_numerical_score_pred):
+    return roc_auc_score(y_true=y_numerical_true, y_score=y_numerical_score_pred)
+
+
+def get_gini_score_for_binary_classifier(y_numerical_true, y_numerical_score_pred):
+    auroc = roc_auc_score(y_true=y_numerical_true, y_score=y_numerical_score_pred)
+    return 2 * auroc - 1
+
+
+def get_ks_score_for_binary_classifier(y_numerical_true, y_numerical_score_pred):
+    v = ks_2samp(
+        y_numerical_score_pred[y_numerical_true == 0],
+        y_numerical_score_pred[y_numerical_true == 1],
+    )
+    return v.statistic
+
+
+def get_precision_recall_score_for_binary_classifier(
+    y_numerical_true, y_numerical_score_pred
+):
+    precision, recall, _ = precision_recall_curve(
+        y_numerical_true, y_numerical_score_pred
+    )
+    return auc(x=recall, y=precision)
+
+
+def get_confusion_matrix(
+    data, y_categorical_label_true_col_name, y_categorical_label_pred_col_name
+):
 
     cm = confusion_matrix(
-        y_true=data[y_true_labels_col_name],
-        y_pred=data[y_pred_labels_col_name],
-        labels=labels,
+        y_true=data[y_categorical_label_true_col_name],
+        y_pred=data[y_categorical_label_pred_col_name],
         normalize="all",
     )
     return cm
@@ -92,45 +118,154 @@ def get_evaluation_regression_metrics(
     log.info(
         "Mean Absolute Error: {a:.3f}".format(
             a=get_mean_absolute_error(
-                y_true=data[y_target_col_name], y_pred=data[y_predict_col_name]
+                y_numerical_true=data[y_target_col_name],
+                y_numerical_pred=data[y_predict_col_name],
             )
         )
     )
     log.info(
         "Median Absolute Error: {a:.3f}".format(
             a=get_mdae_error_score(
-                y_true=data[y_target_col_name], y_pred=data[y_predict_col_name]
+                y_numerical_true=data[y_target_col_name],
+                y_numerical_pred=data[y_predict_col_name],
             )
         )
     )
     log.info(
         "Mean Squared Error: {a:.3f}".format(
             a=get_mse_error_score(
-                y_true=data[y_target_col_name], y_pred=data[y_predict_col_name]
+                y_numerical_true=data[y_target_col_name],
+                y_numerical_pred=data[y_predict_col_name],
             )
         )
     )
     log.info(
         "R2: {a:.3f}".format(
             a=get_r2_score(
-                y_true=data[y_target_col_name], y_pred=data[y_predict_col_name]
+                y_numerical_true=data[y_target_col_name],
+                y_numerical_pred=data[y_predict_col_name],
             )
         )
     )
     log.info(
         "Explained Variance: {a:.3f}".format(
             a=get_explained_variance_score(
-                y_true=data[y_target_col_name], y_pred=data[y_predict_col_name]
+                y_numerical_true=data[y_target_col_name],
+                y_numerical_pred=data[y_predict_col_name],
             )
         )
     )
     log.info(
         "Max Absolute Error: {a:.3f}".format(
             a=get_max_error_score(
-                y_true=data[y_target_col_name], y_pred=data[y_predict_col_name]
+                y_numerical_true=data[y_target_col_name],
+                y_numerical_pred=data[y_predict_col_name],
             )
         )
     )
+
+
+def get_common_evaluation_binary_classification_metrics(
+    data,
+    y_target_numerical_col_name: str,
+    y_predict_numerical_col_name: str,
+    y_no_skill_predict_numerical_col_name: str = None,
+    log=None,
+):
+
+    metrics = {}
+
+    v = get_mean_absolute_error(
+        y_numerical_true=data[y_target_numerical_col_name],
+        y_numerical_pred=data[y_predict_numerical_col_name],
+    )
+    log.info("Mean Absolute Error: {a:.3f}".format(a=v))
+    metrics["Mean Absolute Error"] = v
+
+    if y_no_skill_predict_numerical_col_name:
+        v = get_mean_absolute_error(
+            y_numerical_true=data[y_target_numerical_col_name],
+            y_numerical_pred=data[y_no_skill_predict_numerical_col_name],
+        )
+        log.info("Mean Absolute Error (No Skill): {a:.3f}".format(a=v))
+        metrics["Mean Absolute Error (No Skill)"] = v
+
+    v = get_mse_error_score(
+        y_numerical_true=data[y_target_numerical_col_name],
+        y_numerical_pred=data[y_predict_numerical_col_name],
+    )
+    log.info("Mean Squared Error: {a:.3f}".format(a=v))
+    metrics["Mean Squared Error"] = v
+
+    if y_no_skill_predict_numerical_col_name:
+        v = get_mse_error_score(
+            y_numerical_true=data[y_target_numerical_col_name],
+            y_numerical_pred=data[y_no_skill_predict_numerical_col_name],
+        )
+        log.info("Mean Squared Error (No Skill): {a:.3f}".format(a=v))
+        metrics["Mean Absolute Error (No Skill)"] = v
+
+    v = get_roc_auc_score_for_binary_classifier(
+        y_numerical_true=data[y_target_numerical_col_name],
+        y_numerical_score_pred=data[y_predict_numerical_col_name],
+    )
+    log.info("ROC AUC Score: {a:.3f}".format(a=v))
+    metrics["ROC AUC Score"] = v
+
+    if y_no_skill_predict_numerical_col_name:
+        v = get_roc_auc_score_for_binary_classifier(
+            y_numerical_true=data[y_target_numerical_col_name],
+            y_numerical_score_pred=data[y_no_skill_predict_numerical_col_name],
+        )
+        log.info("ROC AUC Score (No Skill): {a:.3f}".format(a=v))
+        metrics["ROC AUC Score (No Skill)"] = v
+
+    v = get_precision_recall_score_for_binary_classifier(
+        y_numerical_true=data[y_target_numerical_col_name],
+        y_numerical_score_pred=data[y_predict_numerical_col_name],
+    )
+    log.info("Precision Recall AUC Score: {a:.3f}".format(a=v))
+    metrics["Precision Recall AUC Score"] = v
+
+    if y_no_skill_predict_numerical_col_name:
+        v = get_precision_recall_score_for_binary_classifier(
+            y_numerical_true=data[y_target_numerical_col_name],
+            y_numerical_score_pred=data[y_no_skill_predict_numerical_col_name],
+        )
+        log.info("Precision Recall AUC Score (No Skill): {a:.3f}".format(a=v))
+        metrics["Precision Recall AUC Score (No Skill)"] = v
+
+    v = get_gini_score_for_binary_classifier(
+        y_numerical_true=data[y_target_numerical_col_name],
+        y_numerical_score_pred=data[y_predict_numerical_col_name],
+    )
+    log.info("Gini Score: {a:.3f}".format(a=v))
+    metrics["Gini Score"] = v
+
+    if y_no_skill_predict_numerical_col_name:
+        v = get_gini_score_for_binary_classifier(
+            y_numerical_true=data[y_target_numerical_col_name],
+            y_numerical_score_pred=data[y_no_skill_predict_numerical_col_name],
+        )
+        log.info("Gini Score (No Skill): {a:.3f}".format(a=v))
+        metrics["Gini Score (No Skill)"] = v
+
+    v = get_ks_score_for_binary_classifier(
+        y_numerical_true=data[y_target_numerical_col_name],
+        y_numerical_score_pred=data[y_predict_numerical_col_name],
+    )
+    log.info("KS Score: {a:.3f}".format(a=v))
+    metrics["KS Score"] = v
+
+    if y_no_skill_predict_numerical_col_name:
+        v = get_ks_score_for_binary_classifier(
+            y_numerical_true=data[y_target_numerical_col_name],
+            y_numerical_score_pred=data[y_no_skill_predict_numerical_col_name],
+        )
+        log.info("KS Score (No Skill): {a:.3f}".format(a=v))
+        metrics["KS Score (No Skill)"] = v
+
+    return metrics
 
 
 def get_evaluation_binary_classification_metrics(
@@ -140,63 +275,24 @@ def get_evaluation_binary_classification_metrics(
     y_target_class_col_name,
     y_predict_class_col_name,
     x_y_labels,
-    log,
+    y_no_skill_predict_numerical_col_name: str = None,
+    y_no_skill_predict_class_col_name: str = None,
+    log=None,
 ):
 
-    log.info(
-        "Mean Absolute Error: {a:.3f}".format(
-            a=get_mean_absolute_error(
-                y_true=data[y_target_numerical_col_name],
-                y_pred=data[y_predict_numerical_col_name],
-            )
-        )
-    )
-    log.info(
-        "Median Absolute Error: {a:.3f}".format(
-            a=get_mdae_error_score(
-                y_true=data[y_target_numerical_col_name],
-                y_pred=data[y_predict_numerical_col_name],
-            )
-        )
-    )
-    log.info(
-        "Mean Squared Error: {a:.3f}".format(
-            a=get_mse_error_score(
-                y_true=data[y_target_numerical_col_name],
-                y_pred=data[y_predict_numerical_col_name],
-            )
-        )
-    )
-    log.info(
-        "R2: {a:.3f}".format(
-            a=get_r2_score(
-                y_true=data[y_target_numerical_col_name],
-                y_pred=data[y_predict_numerical_col_name],
-            )
-        )
-    )
-    log.info(
-        "Explained Variance: {a:.3f}".format(
-            a=get_explained_variance_score(
-                y_true=data[y_target_numerical_col_name],
-                y_pred=data[y_predict_numerical_col_name],
-            )
-        )
-    )
-    log.info(
-        "Max Absolute Error: {a:.3f}".format(
-            a=get_max_error_score(
-                y_true=data[y_target_numerical_col_name],
-                y_pred=data[y_predict_numerical_col_name],
-            )
-        )
+    get_common_evaluation_binary_classification_metrics(
+        data=data,
+        y_target_numerical_col_name=y_target_numerical_col_name,
+        y_predict_numerical_col_name=y_predict_numerical_col_name,
+        y_no_skill_predict_numerical_col_name=y_no_skill_predict_numerical_col_name,
+        log=log,
     )
 
     log.info(
         "Accuracy: {a:.3f}".format(
             a=get_accuracy_score(
-                y_true=data[y_target_class_col_name],
-                y_pred=data[y_predict_class_col_name],
+                y_numerical_true=data[y_target_class_col_name],
+                y_numerical_pred=data[y_predict_class_col_name],
             )
         )
     )
@@ -204,8 +300,8 @@ def get_evaluation_binary_classification_metrics(
     log.info(
         "Balanced Accuracy: {a:.3f}".format(
             a=get_balanced_accuracy_score(
-                y_true=data[y_target_class_col_name],
-                y_pred=data[y_predict_class_col_name],
+                y_numerical_true=data[y_target_class_col_name],
+                y_numerical_pred=data[y_predict_class_col_name],
             )
         )
     )
@@ -213,65 +309,37 @@ def get_evaluation_binary_classification_metrics(
     log.info(
         "Classification Report\n"
         + get_classification_report(
-            y_true=data[y_target_class_col_name],
-            y_pred=data[y_predict_class_col_name],
+            y_categorical_label_true=data[y_target_class_col_name],
+            y_categorical_label_pred=data[y_predict_class_col_name],
             target_classes=x_y_labels,
         )
     )
 
 
 def get_evaluation_scoring_classification_metrics(
-    data, y_target_numerical_col_name, y_predict_numerical_col_name, log
+    data,
+    y_target_numerical_col_name: str,
+    y_predict_numerical_col_name: str,
+    y_no_skill_predict_numerical_col_name: str = None,
+    results_folder: str = None,
+    data_identification: str = None,
+    log=None,
 ):
 
-    log.info(
-        "Mean Absolute Error: {a:.3f}".format(
-            a=get_mean_absolute_error(
-                y_true=data[y_target_numerical_col_name],
-                y_pred=data[y_predict_numerical_col_name],
-            )
-        )
+    metrics = get_common_evaluation_binary_classification_metrics(
+        data=data,
+        y_target_numerical_col_name=y_target_numerical_col_name,
+        y_predict_numerical_col_name=y_predict_numerical_col_name,
+        y_no_skill_predict_numerical_col_name=y_no_skill_predict_numerical_col_name,
+        log=log,
     )
-    log.info(
-        "Median Absolute Error: {a:.3f}".format(
-            a=get_mdae_error_score(
-                y_true=data[y_target_numerical_col_name],
-                y_pred=data[y_predict_numerical_col_name],
-            )
+
+    if results_folder:
+        save_dictionary_to_json(
+            data=metrics,
+            file_path=results_folder + "metrics_" + data_identification + ".json",
+            log=log,
         )
-    )
-    log.info(
-        "Mean Squared Error: {a:.3f}".format(
-            a=get_mse_error_score(
-                y_true=data[y_target_numerical_col_name],
-                y_pred=data[y_predict_numerical_col_name],
-            )
-        )
-    )
-    log.info(
-        "R2: {a:.3f}".format(
-            a=get_r2_score(
-                y_true=data[y_target_numerical_col_name],
-                y_pred=data[y_predict_numerical_col_name],
-            )
-        )
-    )
-    log.info(
-        "Explained Variance: {a:.3f}".format(
-            a=get_explained_variance_score(
-                y_true=data[y_target_numerical_col_name],
-                y_pred=data[y_predict_numerical_col_name],
-            )
-        )
-    )
-    log.info(
-        "Max Absolute Error: {a:.3f}".format(
-            a=get_max_error_score(
-                y_true=data[y_target_numerical_col_name],
-                y_pred=data[y_predict_numerical_col_name],
-            )
-        )
-    )
 
 
 def plot_evaluation_regression_results(
@@ -315,6 +383,90 @@ def plot_evaluation_regression_results(
     )
 
 
+def plot_common_evaluation_binary_classification_results(
+    data,
+    y_target_numerical_col_name,
+    y_predict_numerical_col_name,
+    results_folder,
+    data_identification,
+    y_no_skill_predict_numerical_col_name: str = None,
+    view_charts: bool = False,
+    save_charts: bool = True,
+    log=None,
+):
+    # scatter predicao x target
+    log.info("Plotting scatter plot of target x predicted")
+    file_path = results_folder + "scatter_pred_x_target_" + data_identification + ".png"
+
+    plot_scatter_2d(
+        data=data,
+        x_col_name=y_target_numerical_col_name,
+        y_col_name=y_predict_numerical_col_name,
+        title="Scatter plot of target x predicted " + data_identification + " dataset",
+        marginal_plot=True,
+        view_chart=view_charts,
+        save_chart=save_charts,
+        file_path_image=file_path,
+    )
+
+    # Precision Recall Curve
+    log.info("Plotting Precision Recall Curve")
+    file_path = results_folder + "pr_curve_" + data_identification + ".png"
+
+    precision, recall, thresholds = precision_recall_curve(
+        y_true=data[y_target_numerical_col_name],
+        y_score=data[y_predict_numerical_col_name],
+    )
+
+    if y_no_skill_predict_numerical_col_name:
+        precision_ns, recall_ns, thresholds_ns = precision_recall_curve(
+            y_true=data[y_target_numerical_col_name],
+            y_score=data[y_no_skill_predict_numerical_col_name],
+        )
+    else:
+        precision_ns = None
+        recall_ns = None
+
+    plot_precision_recall_curve(
+        precision=precision,
+        recall=recall,
+        precision_no_skill=precision_ns,
+        recall_no_skill=recall_ns,
+        title="Precision Recall Curve " + data_identification + " dataset",
+        view_chart=view_charts,
+        save_chart=save_charts,
+        file_path_image=file_path,
+    )
+
+    # ROC Curve
+    log.info("Plotting ROC Curve")
+    file_path = results_folder + "roc_curve_" + data_identification + ".png"
+    fpr, tpr, thresholds = roc_curve(
+        y_true=data[y_target_numerical_col_name],
+        y_score=data[y_predict_numerical_col_name],
+    )
+
+    if y_no_skill_predict_numerical_col_name:
+        fpr_ns, tpr_ns, thresholds_ns = roc_curve(
+            y_true=data[y_target_numerical_col_name],
+            y_score=data[y_no_skill_predict_numerical_col_name],
+        )
+    else:
+        fpr_ns = None
+        tpr_ns = None
+
+    plot_roc_curve(
+        fpr=fpr,
+        tpr=tpr,
+        fpr_no_skill=fpr_ns,
+        tpr_no_skill=tpr_ns,
+        title="ROC Curve " + data_identification + " dataset",
+        view_chart=view_charts,
+        save_chart=save_charts,
+        file_path_image=file_path,
+    )
+
+
 def plot_evaluation_binary_classification_results(
     data,
     y_target_numerical_col_name,
@@ -326,21 +478,18 @@ def plot_evaluation_binary_classification_results(
     view_charts,
     save_charts,
     log,
+    y_no_skill_predict_numerical_col_name: str = None,
 ):
 
-    # scatter predicao x target
-    log.info("Plotting scatter plot of target x predicted")
-    file_path = results_folder + "scatter_pred_x_target.png"
-
-    plot_scatter_2d(
+    plot_common_evaluation_binary_classification_results(
         data=data,
-        x_col_name=y_target_numerical_col_name,
-        y_col_name=y_predict_numerical_col_name,
-        title="Scatter plot of target x predicted",
-        marginal_plot=True,
-        view_chart=view_charts,
-        save_chart=save_charts,
-        file_path_image=file_path,
+        y_target_numerical_col_name=y_target_numerical_col_name,
+        y_predict_numerical_col_name=y_predict_numerical_col_name,
+        y_no_skill_predict_numerical_col_name=y_no_skill_predict_numerical_col_name,
+        results_folder=results_folder,
+        view_charts=view_charts,
+        save_charts=save_charts,
+        log=log,
     )
 
     # confusion matrix
@@ -349,8 +498,8 @@ def plot_evaluation_binary_classification_results(
 
     cm = get_confusion_matrix(
         data=data,
-        y_true_labels_col_name=y_target_class_col_name,
-        y_pred_labels_col_name=y_predict_class_col_name,
+        y_categorical_label_true_col_name=y_target_class_col_name,
+        y_categorical_label_pred_col_name=y_predict_class_col_name,
         labels=labels,
     )
 
@@ -363,69 +512,29 @@ def plot_evaluation_binary_classification_results(
         file_path_image=file_path,
     )
 
-    # Criando um estimador "no skill" de baseline (y predict = classe de maior amostragem)
-    # TODO FAZER ISSO AKI!!
-    # https://machinelearningmastery.com/roc-curves-and-precision-recall-curves-for-classification-in-python/
-
-    # Precision Recall Curve
-    log.info("Plotting Precision Recall Curve")
-    file_path = results_folder + "pr_curve.png"
-
-    precision, recall, thresholds = precision_recall_curve(
-        y_true=data[y_target_numerical_col_name],
-        y_score=data[y_predict_numerical_col_name],
-    )
-
-    plot_precision_recall_curve(
-        precision=precision,
-        recall=recall,
-        title="Precision Recall Curve",
-        view_chart=view_charts,
-        save_chart=save_charts,
-        file_path_image=file_path,
-    )
-
-    # ROC Curve
-    log.info("Plotting ROC Curve")
-    file_path = results_folder + "roc_curve.png"
-    fpr, tpr, thresholds = roc_curve(
-        y_true=data[y_target_numerical_col_name],
-        y_score=data[y_predict_numerical_col_name],
-    )
-
-    plot_roc_curve(
-        fpr=fpr,
-        tpr=tpr,
-        title="ROC Curve",
-        view_chart=view_charts,
-        save_chart=save_charts,
-        file_path_image=file_path,
-    )
-
 
 def plot_evaluation_scoring_classification_results(
     data,
     y_target_numerical_col_name,
     y_predict_numerical_col_name,
     results_folder,
-    view_charts,
-    save_charts,
-    log,
+    data_identification: str,
+    y_no_skill_predict_numerical_col_name: str = None,
+    view_charts: bool = False,
+    save_charts: bool = True,
+    log=None,
 ):
 
-    # scatter predicao x target
-    log.info("Plotting scatter plot of target x predicted")
-    file_path = results_folder + "scatter_pred_x_target.png"
-
-    plot_scatter_2d(
+    plot_common_evaluation_binary_classification_results(
         data=data,
-        x_col_name=y_target_numerical_col_name,
-        y_col_name=y_predict_numerical_col_name,
-        title="Scatter plot of target x predicted",
-        marginal_plot=True,
-        view_chart=view_charts,
-        save_chart=save_charts,
-        file_path_image=file_path,
+        y_target_numerical_col_name=y_target_numerical_col_name,
+        y_predict_numerical_col_name=y_predict_numerical_col_name,
+        y_no_skill_predict_numerical_col_name=y_no_skill_predict_numerical_col_name,
+        data_identification=data_identification,
+        results_folder=results_folder,
+        view_charts=view_charts,
+        save_charts=save_charts,
+        log=log,
     )
 
 
@@ -524,6 +633,7 @@ def evaluate_scoring_classification(
     data: pd,
     y_predict_numerical_column_name: str,
     y_target_numerical_column_name: str,
+    data_identification: str = None,
     results_folder: str = None,
     view_charts: bool = True,
     save_charts: bool = True,
@@ -534,10 +644,17 @@ def evaluate_scoring_classification(
 
     results_folder_metrics = results_folder + "metrics/"
 
+    # Criando um estimador "no skill" de baseline (y predict = classe de maior amostragem)
+    value = data[y_target_numerical_column_name].mode()[0]
+    data["no_skill_predict"] = value
+
     get_evaluation_scoring_classification_metrics(
         data,
         y_target_numerical_col_name=y_target_numerical_column_name,
         y_predict_numerical_col_name=y_predict_numerical_column_name,
+        data_identification=data_identification,
+        y_no_skill_predict_numerical_col_name="no_skill_predict",
+        results_folder=results_folder_metrics,
         log=log,
     )
 
@@ -549,6 +666,8 @@ def evaluate_scoring_classification(
         data=data,
         y_target_numerical_col_name=y_target_numerical_column_name,
         y_predict_numerical_col_name=y_predict_numerical_column_name,
+        data_identification=data_identification,
+        y_no_skill_predict_numerical_col_name="no_skill_predict",
         results_folder=results_folder_charts,
         view_charts=view_charts,
         save_charts=save_charts,

@@ -107,6 +107,7 @@ class XploreDSModel(ABC):
         view_charts=True,
         save_charts=True,
         results_folder=None,
+        data_identification: str = None,
     ):
         """
         Evaluate the model's performance based on application type.
@@ -148,6 +149,7 @@ class XploreDSModel(ABC):
                 data=data,
                 y_predict_numerical_column_name=y_predict_numerical_column_list[0],
                 y_target_numerical_column_name=y_target_numerical_column_list[0],
+                data_identification=data_identification,
                 view_charts=view_charts,
                 save_charts=save_charts,
                 results_folder=results_folder,

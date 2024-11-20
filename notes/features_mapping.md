@@ -31,8 +31,6 @@
 
 ### Dimension Reduction
 
-- Principal Component Analysis
-
 ### Feature Scaling
 
 - Min Max Scaling
@@ -59,7 +57,8 @@
   - Line Trend view
   - Box Plot View
 - Categorical Variables
-  - 
+  - Stacked Bars (volumes)
+  - Stacked Bars (%)
 
 ## Dataset Bulding
 
@@ -75,11 +74,11 @@
 
 - Logistic Regression
 
-##### Scoring
+##### Scoring Model
 
 - 
 
-##### Classifier
+##### Classifier Model
 
 - Confusion Matrix
 - ROC Curve
@@ -87,5 +86,3 @@
 #### Multiclass Classifier
 
 #### Regression Estimator
-
-### Reinforcement Learning

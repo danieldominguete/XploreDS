@@ -76,12 +76,18 @@
 
 ##### Scoring Model
 
-- 
+- Scatter
+- ROC 
+- PR
+- KS 
 
 ##### Classifier Model
 
+- Scatter
+- ROC
+- PR
 - Confusion Matrix
-- ROC Curve
+
 
 #### Multiclass Classifier
 

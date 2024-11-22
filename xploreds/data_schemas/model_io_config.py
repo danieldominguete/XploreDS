@@ -42,3 +42,4 @@ class ModelIOConfig(BaseModel):
     target_categorical_label: VariableConfig = None
     target_categorical_index: VariableConfig = None
     target_categorical_index_to_label: dict[int, str] = {}
+    date_reference: str = None

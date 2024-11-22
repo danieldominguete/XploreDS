@@ -211,6 +211,7 @@ features = [
 
 model_io_config = ModelIOConfig(
     application_type=ApplicationType.scoring_classification,
+    date_reference="transaction_date_month",
     features=features,
     target_numerical=[VariableConfig(name="class_bad")],
     target_categorical_index=VariableConfig(name="class_bad"),
@@ -313,7 +314,8 @@ model.evaluate(
     data=data_train,
     y_predict_numerical_column_list=["output_predict_value"],
     y_target_numerical_column_list=[model_io_config.target_numerical[0].name],
-    data_identification="train",
+    date_reference_column_name=model_io_config.date_reference,
+    dataset_identification="train",
     view_charts=view_charts,
     save_charts=save_charts,
     results_folder=results_folder,
@@ -338,7 +340,8 @@ model.evaluate(
     data=data_test,
     y_predict_numerical_column_list=["output_predict_value"],
     y_target_numerical_column_list=[model_io_config.target_numerical[0].name],
-    data_identification="test",
+    date_reference_column_name=model_io_config.date_reference,
+    dataset_identification="test",
     view_charts=view_charts,
     save_charts=save_charts,
     results_folder=results_folder,

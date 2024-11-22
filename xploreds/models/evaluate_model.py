@@ -4,19 +4,7 @@ Xplore DS :: Evaluate models
 
 from pathlib import Path
 import sys, os
-from sklearn.metrics import mean_absolute_error
-from sklearn.metrics import explained_variance_score
-from sklearn.metrics import max_error
-from sklearn.metrics import mean_squared_error
-from sklearn.metrics import median_absolute_error
-from sklearn.metrics import r2_score
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import balanced_accuracy_score
-from sklearn.metrics import classification_report
-from sklearn.metrics import roc_auc_score, auc
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import roc_curve, precision_recall_curve
-from scipy.stats import ks_2samp
+
 import numpy as np
 import pandas as pd
 
@@ -31,85 +19,33 @@ from xploreds.data_visualization.data_viz_plotly import (
     plot_precision_recall_curve,
     plot_roc_curve,
     plot_ks_statistic,
+    plot_histogram_binary_classes,
+    plot_distribution_binary_classes,
+    plot_ks_score_over_time,
 )
 from xploreds.data_handler.file import save_dictionary_to_json
-
-
-def get_mean_absolute_error(y_numerical_true, y_numerical_pred):
-    return mean_absolute_error(y_true=y_numerical_true, y_pred=y_numerical_pred)
-
-
-def get_explained_variance_score(y_numerical_true, y_numerical_pred):
-    return explained_variance_score(y_true=y_numerical_true, y_pred=y_numerical_pred)
-
-
-def get_max_error_score(y_numerical_true, y_numerical_pred):
-    return max_error(y_true=y_numerical_true, y_pred=y_numerical_pred)
-
-
-def get_mse_error_score(y_numerical_true, y_numerical_pred):
-    return mean_squared_error(y_true=y_numerical_true, y_pred=y_numerical_pred)
-
-
-def get_mdae_error_score(y_numerical_true, y_numerical_pred):
-    return median_absolute_error(y_true=y_numerical_true, y_pred=y_numerical_pred)
-
-
-def get_r2_score(y_numerical_true, y_numerical_pred):
-    return r2_score(y_true=y_numerical_true, y_pred=y_numerical_pred)
-
-
-def get_accuracy_score(y_numerical_true, y_numerical_pred):
-    return accuracy_score(y_true=y_numerical_true, y_pred=y_numerical_pred)
-
-
-def get_balanced_accuracy_score(y_numerical_true, y_numerical_pred):
-    return balanced_accuracy_score(y_true=y_numerical_true, y_pred=y_numerical_pred)
-
-
-def get_classification_report(y_categorical_label_true, y_categorical_label_pred):
-    return classification_report(
-        y_true=y_categorical_label_true,
-        y_pred=y_categorical_label_pred,
-    )
-
-
-def get_roc_auc_score_for_binary_classifier(y_numerical_true, y_numerical_score_pred):
-    return roc_auc_score(y_true=y_numerical_true, y_score=y_numerical_score_pred)
-
-
-def get_gini_score_for_binary_classifier(y_numerical_true, y_numerical_score_pred):
-    auroc = roc_auc_score(y_true=y_numerical_true, y_score=y_numerical_score_pred)
-    return 2 * auroc - 1
-
-
-def get_ks_score_for_binary_classifier(y_numerical_true, y_numerical_score_pred):
-    v = ks_2samp(
-        y_numerical_score_pred[y_numerical_true == 0],
-        y_numerical_score_pred[y_numerical_true == 1],
-    )
-    return v.statistic
-
-
-def get_precision_recall_score_for_binary_classifier(
-    y_numerical_true, y_numerical_score_pred
-):
-    precision, recall, _ = precision_recall_curve(
-        y_numerical_true, y_numerical_score_pred
-    )
-    return auc(x=recall, y=precision)
-
-
-def get_confusion_matrix(
-    data, y_categorical_label_true_col_name, y_categorical_label_pred_col_name
-):
-
-    cm = confusion_matrix(
-        y_true=data[y_categorical_label_true_col_name],
-        y_pred=data[y_categorical_label_pred_col_name],
-        normalize="all",
-    )
-    return cm
+from xploreds.data_analysis.statistics import (
+    get_ks_score_for_binary_classifier,
+    get_ks_score_confidence_interval_for_binary_classifier,
+    get_accuracy_score,
+    get_balanced_accuracy_score,
+    get_binary_ks_curve,
+    get_classification_report,
+    get_confusion_matrix,
+    get_explained_variance_score,
+    get_gini_score_for_binary_classifier,
+    get_ks_score_over_time,
+    get_ks_statistics_interval_confidence,
+    get_max_error_score,
+    get_mdae_error_score,
+    get_mean_absolute_error,
+    get_mse_error_score,
+    get_precision_recall_score_for_binary_classifier,
+    get_r2_score,
+    get_roc_auc_score_for_binary_classifier,
+    precision_recall_curve,
+    roc_curve,
+)
 
 
 def get_evaluation_regression_metrics(
@@ -266,6 +202,14 @@ def get_common_evaluation_binary_classification_metrics(
         log.info("KS Score (No Skill): {a:.3f}".format(a=v))
         metrics["KS Score (No Skill)"] = v
 
+    ci_low, ci_high = get_ks_score_confidence_interval_for_binary_classifier(
+        y_numerical_true=data[y_target_numerical_col_name],
+        y_numerical_score_pred=data[y_predict_numerical_col_name],
+    )
+    log.info(
+        "KS Score Confidence Interval: [{a:.3f} , {b:.3f}]".format(a=ci_low, b=ci_high)
+    )
+
     return metrics
 
 
@@ -389,7 +333,7 @@ def plot_common_evaluation_binary_classification_results(
     y_target_numerical_col_name,
     y_predict_numerical_col_name,
     results_folder,
-    data_identification,
+    dataset_identification,
     y_no_skill_predict_numerical_col_name: str = None,
     view_charts: bool = False,
     save_charts: bool = True,
@@ -397,13 +341,17 @@ def plot_common_evaluation_binary_classification_results(
 ):
     # scatter predicao x target
     log.info("Plotting scatter plot of target x predicted")
-    file_path = results_folder + "scatter_pred_x_target_" + data_identification + ".png"
+    file_path = (
+        results_folder + "scatter_pred_x_target_" + dataset_identification + ".png"
+    )
 
     plot_scatter_2d(
         data=data,
         x_col_name=y_target_numerical_col_name,
         y_col_name=y_predict_numerical_col_name,
-        title="Scatter plot of target x predicted " + data_identification + " dataset",
+        title="Scatter plot of target x predicted "
+        + dataset_identification
+        + " dataset",
         marginal_plot=True,
         view_chart=view_charts,
         save_chart=save_charts,
@@ -412,7 +360,7 @@ def plot_common_evaluation_binary_classification_results(
 
     # Precision Recall Curve
     log.info("Plotting Precision Recall Curve")
-    file_path = results_folder + "pr_curve_" + data_identification + ".png"
+    file_path = results_folder + "pr_curve_" + dataset_identification + ".png"
 
     precision, recall, thresholds = precision_recall_curve(
         y_true=data[y_target_numerical_col_name],
@@ -433,7 +381,7 @@ def plot_common_evaluation_binary_classification_results(
         recall=recall,
         precision_no_skill=precision_ns,
         recall_no_skill=recall_ns,
-        title="Precision Recall Curve " + data_identification + " dataset",
+        title="Precision Recall Curve " + dataset_identification + " dataset",
         view_chart=view_charts,
         save_chart=save_charts,
         file_path_image=file_path,
@@ -441,7 +389,7 @@ def plot_common_evaluation_binary_classification_results(
 
     # ROC Curve
     log.info("Plotting ROC Curve")
-    file_path = results_folder + "roc_curve_" + data_identification + ".png"
+    file_path = results_folder + "roc_curve_" + dataset_identification + ".png"
     fpr, tpr, thresholds = roc_curve(
         y_true=data[y_target_numerical_col_name],
         y_score=data[y_predict_numerical_col_name],
@@ -461,7 +409,7 @@ def plot_common_evaluation_binary_classification_results(
         tpr=tpr,
         fpr_no_skill=fpr_ns,
         tpr_no_skill=tpr_ns,
-        title="ROC Curve " + data_identification + " dataset",
+        title="ROC Curve " + dataset_identification + " dataset",
         view_chart=view_charts,
         save_chart=save_charts,
         file_path_image=file_path,
@@ -519,7 +467,8 @@ def plot_evaluation_scoring_classification_results(
     y_target_numerical_col_name,
     y_predict_numerical_col_name,
     results_folder,
-    data_identification: str,
+    dataset_identification: str,
+    date_reference_column_name: str = None,
     y_no_skill_predict_numerical_col_name: str = None,
     view_charts: bool = False,
     save_charts: bool = True,
@@ -531,19 +480,69 @@ def plot_evaluation_scoring_classification_results(
         y_target_numerical_col_name=y_target_numerical_col_name,
         y_predict_numerical_col_name=y_predict_numerical_col_name,
         y_no_skill_predict_numerical_col_name=y_no_skill_predict_numerical_col_name,
-        data_identification=data_identification,
+        dataset_identification=dataset_identification,
         results_folder=results_folder,
         view_charts=view_charts,
         save_charts=save_charts,
         log=log,
     )
 
+    # Histograma de score entre as classes
+    log.info("Plotting histogram of two classes")
+    file_path = results_folder + "histogram_classes_" + dataset_identification + ".png"
+    plot_histogram_binary_classes(
+        data=data,
+        x_col_name=y_predict_numerical_col_name,
+        y_target_col_name=y_target_numerical_col_name,
+        title="Histogram of scores between classes "
+        + dataset_identification
+        + " dataset",
+        cut_offs=[0.2, 0.7],
+        view_chart=view_charts,
+        save_chart=save_charts,
+        file_path_image=file_path,
+    )
+
+    # Distribuicoes de score entre as classes
+    log.info("Plotting distribution of two classes")
+    file_path = (
+        results_folder + "distribution_classes_" + dataset_identification + ".png"
+    )
+    plot_distribution_binary_classes(
+        data=data,
+        x_col_name=y_predict_numerical_col_name,
+        y_target_col_name=y_target_numerical_col_name,
+        title="Distribution of scores between classes "
+        + dataset_identification
+        + " dataset",
+        cut_offs=[0.2, 0.7],
+        view_chart=view_charts,
+        save_chart=save_charts,
+        file_path_image=file_path,
+    )
+
     # KS curve
+    log.info("Plotting KS curve")
+    file_path = results_folder + "ks_curve_" + dataset_identification + ".png"
     plot_ks_statistic(
         data=data,
         y_true_column_name=y_target_numerical_col_name,
         y_probas_column_name=y_predict_numerical_col_name,
-        title="KS Statistic Plot " + data_identification + " dataset",
+        title="KS Statistic Plot " + dataset_identification + " dataset",
+        view_chart=view_charts,
+        save_chart=save_charts,
+        file_path_image=file_path,
+    )
+
+    # KS ao longo do tempo
+    log.info("Plotting ks metric over the time")
+    file_path = results_folder + "ks_over_time_" + dataset_identification + ".png"
+    plot_ks_score_over_time(
+        data=data,
+        y_true_column_name=y_target_numerical_col_name,
+        y_probas_column_name=y_predict_numerical_col_name,
+        date_column_name=date_reference_column_name,
+        title="KS Statistic over time " + dataset_identification + " dataset",
     )
 
 
@@ -642,7 +641,8 @@ def evaluate_scoring_classification(
     data: pd,
     y_predict_numerical_column_name: str,
     y_target_numerical_column_name: str,
-    data_identification: str = None,
+    date_reference_column_name: str = None,
+    dataset_identification: str = None,
     results_folder: str = None,
     view_charts: bool = True,
     save_charts: bool = True,
@@ -661,7 +661,7 @@ def evaluate_scoring_classification(
         data,
         y_target_numerical_col_name=y_target_numerical_column_name,
         y_predict_numerical_col_name=y_predict_numerical_column_name,
-        data_identification=data_identification,
+        data_identification=dataset_identification,
         y_no_skill_predict_numerical_col_name="no_skill_predict",
         results_folder=results_folder_metrics,
         log=log,
@@ -675,7 +675,8 @@ def evaluate_scoring_classification(
         data=data,
         y_target_numerical_col_name=y_target_numerical_column_name,
         y_predict_numerical_col_name=y_predict_numerical_column_name,
-        data_identification=data_identification,
+        date_reference_column_name=date_reference_column_name,
+        dataset_identification=dataset_identification,
         y_no_skill_predict_numerical_col_name="no_skill_predict",
         results_folder=results_folder_charts,
         view_charts=view_charts,

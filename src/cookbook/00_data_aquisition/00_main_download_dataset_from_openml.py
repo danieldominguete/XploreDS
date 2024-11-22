@@ -75,6 +75,9 @@ describe_dataframe(data, log=log)
 data["transaction_date"] = np.random.choice(
     pd.date_range("2023-01-01", "2023-12-31"), size=len(data)
 )
+data.index = pd.to_datetime(data["transaction_date"], format="%Y-%m-%d")
+data["transaction_date_month"] = data.index.to_period("M").to_timestamp()
+data.reset_index(drop=True, inplace=True)
 
 # Criar identificador unico
 data = create_unique_id(data=data, id_column_name="id", log=log)

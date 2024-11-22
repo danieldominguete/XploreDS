@@ -17,6 +17,7 @@ sys.path.append(str(project_folder))
 
 from xploreds.data_handler.file import create_folder
 from xploreds.data_analysis.statistics import get_binary_ks_curve
+from xploreds.data_analysis.statistics import get_ks_score_over_time
 
 
 def deploy_chart_in_navigator(fig: object) -> None:
@@ -457,6 +458,156 @@ def plot_ks_statistic(
         yaxis_title="Percentage below threshold",
         legend_title="Legend",
         title=title,
+    )
+
+    if save_chart:
+        save_chart_file(fig, file_path_image)
+
+    if view_chart:
+        deploy_chart_in_navigator(fig)
+
+
+def plot_histogram_binary_classes(
+    data,
+    x_col_name: str,
+    y_target_col_name: str,
+    cut_offs: list = None,
+    title: str = "",
+    view_chart: bool = True,
+    save_chart: bool = False,
+    file_path_image: str = None,
+):
+
+    fig = px.histogram(
+        data_frame=data,
+        x=x_col_name,
+        color=y_target_col_name,
+        facet_col=y_target_col_name,
+        barmode="overlay",
+        marginal="box",
+        title=title,
+    )
+
+    if cut_offs is not None:
+        for cut_off in cut_offs:
+            fig.add_vline(x=cut_off, line_width=3, line_dash="dash", line_color="green")
+
+    fig.update_layout(
+        xaxis_title="Threshold",
+        yaxis_title="Frequency",
+        legend_title="Legend",
+        title=title,
+    )
+
+    if save_chart:
+        save_chart_file(fig, file_path_image)
+
+    if view_chart:
+        deploy_chart_in_navigator(fig)
+
+
+def plot_distribution_binary_classes(
+    data,
+    x_col_name: str,
+    y_target_col_name: str,
+    cut_offs: list = None,
+    title: str = "",
+    view_chart: bool = True,
+    save_chart: bool = False,
+    file_path_image: str = None,
+):
+
+    hist1 = data[x_col_name][data[y_target_col_name] == 0]
+    hist2 = data[x_col_name][data[y_target_col_name] == 1]
+    hist_data = [hist1, hist2]
+    group_labels = ["0", "1"]
+
+    fig = ff.create_distplot(
+        hist_data=hist_data,
+        group_labels=group_labels,
+        bin_size=0.025,
+        show_curve=True,
+        show_hist=False,
+        show_rug=False,
+    )
+
+    if cut_offs is not None:
+        for cut_off in cut_offs:
+            fig.add_vline(x=cut_off, line_width=3, line_dash="dash", line_color="green")
+
+    fig.update_layout(
+        xaxis_title="Threshold",
+        yaxis_title="Frequency",
+        legend_title="Legend",
+        title=title,
+    )
+
+    if save_chart:
+        save_chart_file(fig, file_path_image)
+
+    if view_chart:
+        deploy_chart_in_navigator(fig)
+
+
+def plot_ks_score_over_time(
+    data: pd,
+    y_true_column_name: str,
+    y_probas_column_name: str,
+    date_column_name: str,
+    title="KS Statistic over time",
+    view_chart: bool = True,
+    save_chart: bool = False,
+    file_path_image: str = None,
+):
+
+    time_frame, ks_values, ks_ci_low_values, ks_ci_high_values = get_ks_score_over_time(
+        data=data,
+        y_true_column_name=y_true_column_name,
+        y_probas_column_name=y_probas_column_name,
+        time_column_name=date_column_name,
+    )
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scatter(
+            x=time_frame,
+            y=ks_ci_low_values,
+            mode="lines",
+            name="CI low",
+            line=dict(color="lightblue", dash="dot"),
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=time_frame,
+            y=ks_ci_high_values,
+            mode="lines",
+            name="CI high",
+            fill="tonexty",
+            fillcolor="lightblue",
+            line=dict(color="lightblue", dash="dot"),
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=time_frame,
+            y=ks_values,
+            mode="lines+markers",
+            name="KS Statistics",
+            line=dict(color="blue"),
+            marker=dict(symbol="circle", size=8, color="blue"),
+        )
+    )
+
+    fig.update_layout(
+        xaxis_title="Date",
+        yaxis_title="KS Statistic",
+        legend_title="Legend",
+        title=title,
+        yaxis=dict(range=[0, 1]),
     )
 
     if save_chart:

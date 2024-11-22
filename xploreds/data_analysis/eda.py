@@ -16,6 +16,7 @@ from xploreds.data_visualization.data_viz_plotly import (
     plot_lines,
     plot_boxplot,
 )
+from xploreds.data_analysis.statistics import get_information_value
 
 
 def descriptive_analysis(
@@ -432,3 +433,88 @@ def trend_analysis(
                     + var
                     + ".png",
                 )
+
+
+def categorical_target_association_analysis(
+    data: pd,
+    date_col_name: str,
+    date_col_format: str = "%Y-%m-%d",
+    date_trunc_by: str = None,
+    numerical_variables: list = None,
+    categorical_variables: list = None,
+    target_col_name: str = None,
+    view_plots: bool = False,
+    save_plots: bool = False,
+    save_analysis: bool = False,
+    output_folder_path: str = None,
+    prefix_label: str = None,
+    log: object = None,
+) -> None:
+
+    # information value
+    df_iv, df_woe = get_information_value(
+        data=data,
+        y_true_numeric_column_name=target_col_name,
+        var_categorical_column_name=categorical_variables,
+        var_numeric_column_names=numerical_variables,
+        log=log,
+    )
+
+    if view_plots or save_plots:
+
+        if log:
+            log.info("Plotting categorical target association analysis...")
+
+        plot_bar(
+            data=df_iv,
+            y_col_name=df_iv["variable"],
+            x_col_name=df_iv["iv"],
+            text_col_name=df_iv["analysis"],
+            title="Information Value with " + target_col_name,
+            orientation="h",
+            view_chart=view_plots,
+            save_chart=save_plots,
+            file_path_image=output_folder_path
+            + "/charts/"
+            + prefix_label
+            + "iv_"
+            + ".png",
+        )
+
+        plot_bar(
+            data=df_woe,
+            y_col_name=df_woe["variable"],
+            x_col_name=df_woe["woe"].abs(),
+            color_col_name=df_woe["variable_group"],
+            barmode="stack",
+            orientation="h",
+            title="WoE with " + target_col_name,
+            view_chart=view_plots,
+            save_chart=save_plots,
+            file_path_image=output_folder_path
+            + "/charts/"
+            + prefix_label
+            + "woe_"
+            + ".png",
+        )
+
+    # saving statistics
+    if save_analysis:
+
+        if log:
+            log.info("Saving categorical target association analysis...")
+
+        full_path = (
+            output_folder_path + "/reports/" + prefix_label + "association_target.xlsx"
+        )
+
+        # verificando se a pasta existe caso contrario criar a pasta
+        create_folder(os.path.dirname(full_path))
+
+        # Multiple DataFrames to different sheets
+        with pd.ExcelWriter(full_path) as writer:
+            df_iv.to_excel(writer, sheet_name="information_value", index=False)
+            df_woe.to_excel(writer, sheet_name="woe", index=False)
+
+        if log:
+            log.info("Categorical target association analysis saved in " + full_path)

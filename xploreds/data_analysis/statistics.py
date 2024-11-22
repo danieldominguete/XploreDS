@@ -19,7 +19,7 @@ from sklearn.metrics import balanced_accuracy_score
 from sklearn.metrics import classification_report
 from sklearn.metrics import roc_auc_score, auc
 from sklearn.metrics import confusion_matrix
-from sklearn.metrics import roc_curve, precision_recall_curve
+from sklearn.metrics import precision_recall_curve
 from scipy.stats import ks_2samp
 
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib
@@ -253,3 +253,89 @@ def get_ks_score_over_time(
         ks_ci_high_values.append(ks_ci_high)
 
     return time_frame, ks_values, ks_ci_low_values, ks_ci_high_values
+
+
+def _iv_discriminatory_analysis(x):
+
+    if x < 0.02:
+        return "useless"
+    elif x < 0.1:
+        return "weak"
+    elif x < 0.3:
+        return "medium"
+    elif x < 0.5:
+        return "strong"
+    else:
+        return "suspicious"
+
+
+def get_information_value(
+    data: pd,
+    y_true_numeric_column_name,
+    var_categorical_column_name,
+    var_numeric_column_names,
+    n_numerical_bins=10,
+    log=None,
+):
+
+    if len(data[y_true_numeric_column_name].unique()) != 2:
+        raise ValueError(
+            "Cannot calculate IV for data with "
+            "{} category/ies".format(len(data[y_true_numeric_column_name].unique()))
+        )
+    var_list = var_categorical_column_name + var_numeric_column_names
+    df_iv = pd.DataFrame(columns=["variable", "iv"])
+    df_woe = pd.DataFrame(columns=["variable", "variable_group", "woe", "iv"])
+
+    for var in var_list:
+
+        if log:
+            log.info("Processing IV of variable {} ...".format(var))
+
+        if var in var_categorical_column_name:
+            data_temp = data[[var, y_true_numeric_column_name]]
+
+        if var in var_numeric_column_names:
+            data_temp = data[[var, y_true_numeric_column_name]]
+            data_temp[var] = pd.qcut(
+                data_temp[var], q=n_numerical_bins, duplicates="drop", precision=0
+            )
+
+        data_temp = data_temp.astype({var: str})
+        data_agg = data_temp.groupby(var, as_index=False, dropna=False).agg(
+            {y_true_numeric_column_name: ["count", "sum"]}
+        )
+        data_agg.columns = ["variable_group", "count", "events"]
+        data_agg["variable"] = var
+        data_agg["non_events"] = data_agg["count"] - data_agg["events"]
+        data_agg["perc_events"] = data_agg["events"] / data_agg["count"]
+        data_agg["perc_non_events"] = data_agg["non_events"] / data_agg["count"]
+        data_agg["woe"] = np.log(data_agg["perc_events"] / data_agg["perc_non_events"])
+        data_agg = data_agg.replace({"woe": {np.inf: 0, -np.inf: 0}})
+        data_agg["iv"] = (
+            data_agg["perc_events"] - data_agg["perc_non_events"]
+        ) * data_agg["woe"]
+
+        df_woe = pd.concat(
+            [df_woe, data_agg[["variable", "variable_group", "woe", "iv"]]]
+        )
+        df_iv = pd.concat(
+            [
+                df_iv,
+                pd.DataFrame(
+                    {
+                        "variable": [var],
+                        "iv": [data_agg["iv"].sum()],
+                    }
+                ),
+            ]
+        )
+
+        if log:
+            log.info("IV of variable {} = {:.2f}".format(var, data_agg["iv"].sum()))
+
+    df_iv["analysis"] = df_iv["iv"].apply(lambda x: _iv_discriminatory_analysis(x))
+    df_iv.sort_values(by="iv", ascending=True, inplace=True)
+    df_woe.sort_values(by="iv", ascending=True, inplace=True)
+
+    return df_iv, df_woe

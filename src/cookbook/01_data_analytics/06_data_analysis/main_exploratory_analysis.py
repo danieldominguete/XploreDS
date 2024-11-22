@@ -18,7 +18,11 @@ sys.path.append(str(project_folder))
 from xploreds.environment.environment import XploreDSLocalhost
 from xploreds.environment.logging import XploreDSLogging
 from xploreds.data_handler.file import load_dataframe_from_parquet
-from xploreds.data_analysis.eda import descriptive_analysis, trend_analysis
+from xploreds.data_analysis.eda import (
+    descriptive_analysis,
+    trend_analysis,
+    categorical_target_association_analysis,
+)
 
 # ==================================================================================
 # Setup do script
@@ -42,14 +46,16 @@ log.init_run()
 log.title("Script setup")
 
 # Configuracao de dados de entrada
-input_dataset_file_path = "data/credit-g/curated/credit-g.parquet"
+input_dataset_file_path = "data/credit-g/processed/credit-g_master_table.parquet"
 
 # Analises exploratorias
-exec_descritive_analysis = True
+exec_descritive_analysis = False
 
-exec_trend_analysis = True
+exec_trend_analysis = False
 trend_analysis_date_ref = "transaction_date"
 trend_analysis_date_trunc = "M"
+
+exec_association_analysis = True
 
 view_plots = True
 save_plots = True
@@ -94,6 +100,22 @@ if exec_trend_analysis:
         save_analysis=save_analysis,
         output_folder_path=log.log_path,
         prefix_label="trend_",
+        log=log,
+    )
+
+if exec_association_analysis:
+    log.title("Association analysis")
+    categorical_target_association_analysis(
+        data=data,
+        target_col_name="class_bad",
+        date_col_name=trend_analysis_date_ref,
+        numerical_variables=["duration"],
+        categorical_variables=["credit_history", "purpose"],
+        view_plots=view_plots,
+        save_plots=save_plots,
+        save_analysis=save_analysis,
+        output_folder_path=log.log_path,
+        prefix_label="assoc_",
         log=log,
     )
 # ==================================================================================

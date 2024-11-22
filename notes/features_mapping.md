@@ -60,6 +60,11 @@
   - Stacked Bars (volumes)
   - Stacked Bars (%)
 
+#### Target Association Analysis
+
+- Categorical Target
+  - WoE + IV
+
 ## Dataset Bulding
 
 # Models Design

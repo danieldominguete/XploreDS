@@ -19,7 +19,7 @@ from sklearn.metrics import balanced_accuracy_score
 from sklearn.metrics import classification_report
 from sklearn.metrics import roc_auc_score, auc
 from sklearn.metrics import confusion_matrix
-from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import precision_recall_curve, roc_curve
 from scipy.stats import ks_2samp
 
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib

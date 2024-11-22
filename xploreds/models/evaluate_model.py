@@ -368,10 +368,12 @@ def plot_common_evaluation_binary_classification_results(
     )
 
     if y_no_skill_predict_numerical_col_name:
-        precision_ns, recall_ns, thresholds_ns = precision_recall_curve(
-            y_true=data[y_target_numerical_col_name],
-            y_score=data[y_no_skill_predict_numerical_col_name],
-        )
+
+        # calculate the no skill line as the proportion of the positive class
+        no_skill = len(data[data[y_target_numerical_col_name] == 1]) / (data.shape[0])
+        recall_ns = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        precision_ns = [no_skill for _ in range(len(recall_ns))]
+
     else:
         precision_ns = None
         recall_ns = None

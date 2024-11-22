@@ -30,6 +30,7 @@ from xploreds.data_visualization.data_viz_plotly import (
     plot_confusion_matrix,
     plot_precision_recall_curve,
     plot_roc_curve,
+    plot_ks_statistic,
 )
 from xploreds.data_handler.file import save_dictionary_to_json
 
@@ -535,6 +536,14 @@ def plot_evaluation_scoring_classification_results(
         view_charts=view_charts,
         save_charts=save_charts,
         log=log,
+    )
+
+    # KS curve
+    plot_ks_statistic(
+        data=data,
+        y_true_column_name=y_target_numerical_col_name,
+        y_probas_column_name=y_predict_numerical_col_name,
+        title="KS Statistic Plot " + data_identification + " dataset",
     )
 
 

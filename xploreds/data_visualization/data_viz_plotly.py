@@ -248,6 +248,64 @@ def plot_roc_curve(
         deploy_chart_in_navigator(fig)
 
 
+def plot_perc_bar(
+    data,
+    x_col_name: str,
+    y_col_name: str,
+    title: str = "",
+    view_chart: bool = True,
+    save_chart: bool = False,
+    file_path_image: str = None,
+):
+
+    # agregacao por categoria
+    data_agg = (
+        data.groupby([x_col_name, y_col_name])
+        .agg(
+            {
+                y_col_name: [
+                    ("count", "count"),
+                    # Calculate percentage within each _dt_trunc group
+                    (
+                        "perc",
+                        lambda x: 100
+                        * len(x)
+                        / len(x.groupby(level=-1).transform("count")),
+                    ),
+                ]
+            }
+        )
+        .reset_index()
+    )
+
+    data_agg.columns = (
+        [x_col_name] + [y_col_name] + [f"{col[1]}" for col in data_agg.columns[2:]]
+    )
+
+    # Calculate percentages within each _dt_trunc group (relative to time period)
+    data_agg["perc_by_x_class"] = data_agg.groupby(x_col_name)["count"].transform(
+        lambda x: 100 * x / x.sum()
+    )
+
+    # Calculate overall percentage (relative to total dataset)
+    total_records = data_agg["count"].sum()
+    data_agg["perc_total"] = 100 * data_agg["count"] / total_records
+
+    # Plot with overall percentages
+    plot_bar(
+        data=data_agg,
+        x_col_name=x_col_name,
+        y_col_name="perc_by_x_class",
+        color_col_name=y_col_name,
+        title=title,
+        barmode="stack",
+        orientation="v",
+        view_chart=view_chart,
+        save_chart=save_chart,
+        file_path_image=file_path_image,
+    )
+
+
 def plot_bar(
     data,
     x_col_name: str,
@@ -336,17 +394,61 @@ def plot_lines(
         deploy_chart_in_navigator(fig)
 
 
-def plot_boxplot(
+def plot_violinplot(
     data,
     x_col_name: str,
     y_col_name: str,
+    group_color_col_name: str = None,
     title: str = "",
+    with_box: bool = True,
     view_chart: bool = True,
     save_chart: bool = False,
     file_path_image: str = None,
 ):
 
-    fig = px.box(data_frame=data, x=x_col_name, y=y_col_name, title=title)
+    if with_box:
+        fig = px.violin(
+            data_frame=data,
+            x=x_col_name,
+            y=y_col_name,
+            color=group_color_col_name,
+            box=True,
+            points="outliers",
+            title=title,
+        )
+    else:
+        fig = px.violin(data_frame=data, x=x_col_name, y=y_col_name, title=title)
+
+    if save_chart:
+        save_chart_file(fig, file_path_image)
+
+    if view_chart:
+        deploy_chart_in_navigator(fig)
+
+
+def plot_boxplot(
+    data,
+    x_col_name: str,
+    y_col_name: str,
+    group_color_col_name: str = None,
+    title: str = "",
+    with_points: bool = True,
+    view_chart: bool = True,
+    save_chart: bool = False,
+    file_path_image: str = None,
+):
+
+    if with_points:
+        fig = px.box(
+            data_frame=data,
+            x=x_col_name,
+            y=y_col_name,
+            color=group_color_col_name,
+            points="all",
+            title=title,
+        )
+    else:
+        fig = px.box(data_frame=data, x=x_col_name, y=y_col_name, title=title)
 
     if save_chart:
         save_chart_file(fig, file_path_image)

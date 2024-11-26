@@ -15,8 +15,13 @@ from xploreds.data_visualization.data_viz_plotly import (
     plot_bar,
     plot_lines,
     plot_boxplot,
+    plot_perc_bar,
+    plot_violinplot,
 )
-from xploreds.data_analysis.statistics import get_information_value
+from xploreds.data_analysis.statistics import (
+    get_information_value,
+    get_ks_score_from_numerical_covariables,
+)
 
 
 def descriptive_analysis(
@@ -451,7 +456,72 @@ def categorical_target_association_analysis(
     log: object = None,
 ) -> None:
 
-    # information value
+    # values distribution for each class
+    if log:
+        log.subtitle("Values distribution for each class")
+
+    if view_plots or save_plots:
+
+        if log:
+            log.info(
+                "Plotting covariables distribution for categorical target value..."
+            )
+
+        for var in categorical_variables:
+            plot_perc_bar(
+                data=data,
+                x_col_name=target_col_name,
+                y_col_name=var,
+                title="Distribution of " + str(var) + " with " + target_col_name,
+                view_chart=view_plots,
+                save_chart=save_plots,
+                file_path_image=output_folder_path
+                + "/charts/"
+                + "dist_categorical_"
+                + var
+                + "_"
+                + target_col_name
+                + ".png",
+            )
+
+        for var in numerical_variables:
+            plot_boxplot(
+                data=data,
+                x_col_name=target_col_name,
+                y_col_name=var,
+                title="Distribution of " + str(var) + " with " + target_col_name,
+                with_points=True,
+                view_chart=view_plots,
+                save_chart=save_plots,
+                file_path_image=output_folder_path
+                + "/charts/"
+                + "dist_numerical_"
+                + var
+                + "_"
+                + target_col_name
+                + ".png",
+            )
+
+            plot_violinplot(
+                data=data,
+                x_col_name=target_col_name,
+                y_col_name=var,
+                title="Distribution of " + str(var) + " with " + target_col_name,
+                with_box=True,
+                view_chart=view_plots,
+                save_chart=save_plots,
+                file_path_image=output_folder_path
+                + "/charts/"
+                + "violin_numerical_"
+                + var
+                + "_"
+                + target_col_name
+                + ".png",
+            )
+
+    # information value (numerical + categorical)
+    if log:
+        log.subtitle("Information value for target association analysis")
     df_iv, df_woe = get_information_value(
         data=data,
         y_true_numeric_column_name=target_col_name,
@@ -463,7 +533,7 @@ def categorical_target_association_analysis(
     if view_plots or save_plots:
 
         if log:
-            log.info("Plotting categorical target association analysis...")
+            log.info("Plotting IF for categorical target association analysis...")
 
         plot_bar(
             data=df_iv,
@@ -477,15 +547,15 @@ def categorical_target_association_analysis(
             file_path_image=output_folder_path
             + "/charts/"
             + prefix_label
-            + "iv_"
+            + "eda_iv_"
             + ".png",
         )
 
         plot_bar(
             data=df_woe,
-            y_col_name=df_woe["variable"],
+            y_col_name=df_woe["variable_group_full"],
             x_col_name=df_woe["woe"].abs(),
-            color_col_name=df_woe["variable_group"],
+            # color_col_name=df_woe["variable_group"],
             barmode="stack",
             orientation="h",
             title="WoE with " + target_col_name,
@@ -494,7 +564,37 @@ def categorical_target_association_analysis(
             file_path_image=output_folder_path
             + "/charts/"
             + prefix_label
-            + "woe_"
+            + "eda_woe_"
+            + ".png",
+        )
+
+    # ks score (numerical)
+    if log:
+        log.subtitle("KS value for target association analysis")
+    ks_vars = get_ks_score_from_numerical_covariables(
+        data=data,
+        y_true_column_name=target_col_name,
+        covariables_column_name_list=numerical_variables,
+        log=log,
+    )
+
+    if view_plots or save_plots:
+
+        if log:
+            log.info("Plotting KS for categorical target association analysis...")
+
+        plot_bar(
+            data=ks_vars,
+            y_col_name=ks_vars["variable"],
+            x_col_name=ks_vars["ks"],
+            title="KS with " + target_col_name,
+            orientation="h",
+            view_chart=view_plots,
+            save_chart=save_plots,
+            file_path_image=output_folder_path
+            + "/charts/"
+            + prefix_label
+            + "eda_ks_"
             + ".png",
         )
 
@@ -502,7 +602,7 @@ def categorical_target_association_analysis(
     if save_analysis:
 
         if log:
-            log.info("Saving categorical target association analysis...")
+            log.subtitle("Saving categorical target association report")
 
         full_path = (
             output_folder_path + "/reports/" + prefix_label + "association_target.xlsx"
@@ -515,6 +615,6 @@ def categorical_target_association_analysis(
         with pd.ExcelWriter(full_path) as writer:
             df_iv.to_excel(writer, sheet_name="information_value", index=False)
             df_woe.to_excel(writer, sheet_name="woe", index=False)
-
+            ks_vars.to_excel(writer, sheet_name="ks", index=False)
         if log:
             log.info("Categorical target association analysis saved in " + full_path)

@@ -255,6 +255,39 @@ def get_ks_score_over_time(
     return time_frame, ks_values, ks_ci_low_values, ks_ci_high_values
 
 
+def get_ks_score_from_numerical_covariables(
+    data: pd,
+    y_true_column_name: str,
+    covariables_column_name_list: str,
+    log: object = None,
+):
+
+    ks_values = []
+
+    for v in covariables_column_name_list:
+
+        ks_value = get_ks_score_for_binary_classifier(
+            y_numerical_true=data[y_true_column_name],
+            y_numerical_score_pred=data[v],
+        )
+
+        ks_values.append(ks_value)
+
+        if log:
+            log.info("KS: {} = {:.4f}".format(v, ks_value))
+
+    response = pd.DataFrame(
+        {
+            "variable": covariables_column_name_list,
+            "ks": ks_values,
+        }
+    )
+
+    response.sort_values(by="ks", ascending=True, inplace=True)
+
+    return response
+
+
 def _iv_discriminatory_analysis(x):
 
     if x < 0.02:
@@ -336,6 +369,12 @@ def get_information_value(
 
     df_iv["analysis"] = df_iv["iv"].apply(lambda x: _iv_discriminatory_analysis(x))
     df_iv.sort_values(by="iv", ascending=True, inplace=True)
-    df_woe.sort_values(by="iv", ascending=True, inplace=True)
+
+    # identificador de variavel + categoria
+    df_woe["variable_group_full"] = (
+        df_woe["variable"].astype(str) + "_" + df_woe["variable_group"].astype(str)
+    )
+
+    df_woe.sort_values(by="woe", ascending=False, inplace=True)
 
     return df_iv, df_woe

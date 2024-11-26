@@ -48,15 +48,23 @@ log.title("Script setup")
 # Configuracao de dados de entrada
 input_dataset_file_path = "data/credit-g/processed/credit-g_master_table.parquet"
 
-# Analises exploratorias
+numerical_variables = ["duration", "credit_amount", "age", "num_dependents"]
+categorical_variables = ["purpose", "employment", "personal_status"]
+target_variable = "class_bad"
+
+# EDA descritiva geral
 exec_descritive_analysis = False
 
+# EDA tendencias temporais
 exec_trend_analysis = False
 trend_analysis_date_ref = "transaction_date"
 trend_analysis_date_trunc = "M"
 
-exec_association_analysis = True
+# EDA associacoes (correlacoes)
+exec_target_association_analysis = True
+exec_covariables_association_analysis = True
 
+# Output results
 view_plots = True
 save_plots = True
 save_analysis = True
@@ -77,13 +85,13 @@ if exec_descritive_analysis:
     log.title("Descriptive analysis")
     descriptive_analysis(
         data=data,
-        numerical_variables=data.select_dtypes(include=[np.number]).columns,
-        categorical_variables=data.select_dtypes(["category"]).columns,
+        numerical_variables=numerical_variables,
+        categorical_variables=categorical_target_association_analysis,
         view_plots=view_plots,
         save_plots=save_plots,
         save_analysis=save_analysis,
         output_folder_path=log.log_path,
-        prefix_label="eda_",
+        prefix_label="descriptive_",
         log=log,
     )
 
@@ -93,8 +101,8 @@ if exec_trend_analysis:
         data=data,
         date_col_name=trend_analysis_date_ref,
         date_trunc_by=trend_analysis_date_trunc,
-        numerical_variables=data.select_dtypes(include=[np.number]).columns,
-        categorical_variables=data.select_dtypes(["category"]).columns,
+        numerical_variables=numerical_variables,
+        categorical_variables=categorical_variables,
         view_plots=view_plots,
         save_plots=save_plots,
         save_analysis=save_analysis,
@@ -103,14 +111,14 @@ if exec_trend_analysis:
         log=log,
     )
 
-if exec_association_analysis:
-    log.title("Association analysis")
+if exec_target_association_analysis:
+    log.title("Target association analysis")
     categorical_target_association_analysis(
         data=data,
         target_col_name="class_bad",
         date_col_name=trend_analysis_date_ref,
-        numerical_variables=["duration"],
-        categorical_variables=["credit_history", "purpose"],
+        numerical_variables=numerical_variables,
+        categorical_variables=categorical_variables,
         view_plots=view_plots,
         save_plots=save_plots,
         save_analysis=save_analysis,
@@ -118,6 +126,10 @@ if exec_association_analysis:
         prefix_label="assoc_",
         log=log,
     )
+
+if exec_covariables_association_analysis:
+    log.title("Covariables association analysis")
+
 # ==================================================================================
 # Salvando artefatos de saida
 # ==================================================================================

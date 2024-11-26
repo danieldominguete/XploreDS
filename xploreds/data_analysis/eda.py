@@ -5,6 +5,8 @@ Xplore DS :: Exploratory Data Analysis
 import sys, os
 from pathlib import Path
 import pandas as pd
+import numpy as np
+
 
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib
 project_folder = Path(__file__).resolve().parents[2]
@@ -17,10 +19,13 @@ from xploreds.data_visualization.data_viz_plotly import (
     plot_boxplot,
     plot_perc_bar,
     plot_violinplot,
+    plot_scatter,
+    plot_heatmap,
 )
 from xploreds.data_analysis.statistics import (
     get_information_value,
     get_ks_score_from_numerical_covariables,
+    get_association_statistics,
 )
 
 
@@ -440,6 +445,301 @@ def trend_analysis(
                 )
 
 
+def variables_association_analysis(
+    data: pd,
+    numerical_variables: list = None,
+    categorical_variables: list = None,
+    view_plots: bool = False,
+    save_plots: bool = False,
+    save_analysis: bool = False,
+    output_folder_path: str = None,
+    prefix_label: str = None,
+    log: object = None,
+) -> None:
+    """
+    - Pearson Correlation: Use for linear relationships between continuous variables with normally distributed data.
+    - Spearman Rank Correlation: Use for monotonic relationships and when the data is not normally distributed or has ordinal variables.
+    - Kendall Tau Correlation: Use for ordinal data and when handling small datasets with many tied ranks.
+    - Point-Biserial Correlation: Use for relationships between a binary variable and a continuous variable.
+    - Cramér's V: Use for relationships between two categorical variables.
+    """
+
+    metrics = get_association_statistics(
+        data=data,
+        numerical_variables=numerical_variables,
+        categorical_variables=categorical_variables,
+        view_plots=view_plots,
+        save_plots=save_plots,
+        save_analysis=save_analysis,
+        output_folder_path=output_folder_path,
+        prefix_label=prefix_label,
+        log=log,
+    )
+
+    # numerical x numerical
+    log.subtitle("Numerical variables association metrics")
+    for n1 in numerical_variables:
+        for n2 in numerical_variables:
+
+            pearson_metric = metrics[
+                (metrics["variable_1"] == n1)
+                & (metrics["variable_2"] == n2)
+                & ((metrics["metric"] == "pearson"))
+            ]
+            pearson_metric = pearson_metric["value"].iloc[0]
+
+            spearman_metric = metrics[
+                (metrics["variable_1"] == n1)
+                & (metrics["variable_2"] == n2)
+                & ((metrics["metric"] == "spearman"))
+            ]
+            spearman_metric = spearman_metric["value"].iloc[0]
+
+            kendall_metric = metrics[
+                (metrics["variable_1"] == n1)
+                & (metrics["variable_2"] == n2)
+                & ((metrics["metric"] == "kendall"))
+            ]
+            kendall_metric = kendall_metric["value"].iloc[0]
+
+            if view_plots or save_plots:
+                plot_scatter(
+                    data=data,
+                    x_col_name=n1,
+                    y_col_name=n2,
+                    title="Correlation of " + n1 + " and " + n2,
+                    text_annotation="Pearson:{:.2f} Spearman:{:.2f} Kendall:{:.2f}".format(
+                        pearson_metric, spearman_metric, kendall_metric
+                    ),
+                    x_text_annotation=0.95,
+                    y_text_annotation=0.9,
+                    with_trendline=True,
+                    view_chart=view_plots,
+                    save_chart=save_plots,
+                    file_path_image=output_folder_path
+                    + "/charts/"
+                    + "corr_numerical_"
+                    + n1
+                    + "_"
+                    + n2
+                    + ".png",
+                )
+
+    # numerical x categorical
+    log.subtitle("Numerical and categorical variables association metrics")
+    for n1 in numerical_variables:
+        for n2 in categorical_variables:
+
+            if view_plots or save_plots:
+                plot_boxplot(
+                    data=data,
+                    x_col_name=n2,
+                    y_col_name=n1,
+                    title="Association of " + n1 + " and " + n2,
+                    view_chart=view_plots,
+                    save_chart=save_plots,
+                    file_path_image=output_folder_path
+                    + "/charts/"
+                    + "assoc_numerical_categorical_"
+                    + n1
+                    + "_"
+                    + n2
+                    + ".png",
+                )
+
+    # categorical x categorical
+    log.subtitle("Categorical variables association metrics")
+    for n1 in categorical_variables:
+        for n2 in categorical_variables:
+
+            if view_plots or save_plots:
+                plot_perc_bar(
+                    data=data,
+                    x_col_name=n1,
+                    y_col_name=n2,
+                    title="Association of " + n1 + " and " + n2,
+                    view_chart=view_plots,
+                    save_chart=save_plots,
+                    file_path_image=output_folder_path
+                    + "/charts/"
+                    + "assoc_categorical_"
+                    + n1
+                    + "_"
+                    + n2
+                    + ".png",
+                )
+
+    if save_analysis:
+
+        if log:
+            log.subtitle("Saving variables association report")
+
+        full_path = (
+            output_folder_path
+            + "/reports/"
+            + prefix_label
+            + "association_variables.xlsx"
+        )
+
+        # verificando se a pasta existe caso contrario criar a pasta
+        create_folder(os.path.dirname(full_path))
+
+        # Multiple DataFrames to different sheets
+        with pd.ExcelWriter(full_path) as writer:
+            metrics.to_excel(writer, sheet_name="association", index=False)
+        if log:
+            log.info("Variables association analysis saved in " + full_path)
+
+    # resume plots
+    if view_plots or save_plots:
+
+        if log:
+            log.subtitle("Plotting variables association metrics")
+
+        for m in metrics["metric"].unique():
+            plot_bar(
+                data=metrics[metrics["metric"] == m],
+                x_col_name="variable_1",
+                y_col_name="value",
+                color_col_name="variable_2",
+                title="Metric of " + m,
+                view_chart=view_plots,
+                save_chart=save_plots,
+                file_path_image=output_folder_path + "/charts/" + "assoc_" + m + ".png",
+            )
+
+            plot_heatmap(
+                data=metrics[metrics["metric"] == m],
+                x_category_col_name="variable_1",
+                y_category_col_name="variable_2",
+                value_col_name="value",
+                title="Metric of " + m,
+                view_chart=view_plots,
+                save_chart=save_plots,
+                file_path_image=output_folder_path + "/charts/" + "assoc_" + m + ".png",
+            )
+
+
+def numerical_target_association_analysis(
+    data: pd,
+    date_col_name: str,
+    date_col_format: str = "%Y-%m-%d",
+    date_trunc_by: str = None,
+    numerical_variables: list = None,
+    categorical_variables: list = None,
+    target_col_name: str = None,
+    view_plots: bool = False,
+    save_plots: bool = False,
+    save_analysis: bool = False,
+    output_folder_path: str = None,
+    prefix_label: str = None,
+    log: object = None,
+) -> None:
+
+    if log:
+        log.subtitle("Distribution for target")
+
+    # association metrics
+    if target_col_name not in numerical_variables:
+        numerical_variables.append(target_col_name)
+
+    metrics = get_association_statistics(
+        data=data,
+        numerical_variables=numerical_variables,
+        categorical_variables=categorical_variables,
+        view_plots=view_plots,
+        save_plots=save_plots,
+        save_analysis=save_analysis,
+        output_folder_path=output_folder_path,
+        prefix_label=prefix_label,
+        log=log,
+    )
+
+    # filtrando somente resultados com target
+    metrics = metrics[metrics["variable_2"] == target_col_name]
+    metrics = metrics[metrics["variable_1"] != target_col_name]
+
+    if view_plots or save_plots:
+
+        if log:
+            log.info("Plotting covariables distribution for numerical target value...")
+
+        for var in categorical_variables:
+            plot_boxplot(
+                data=data,
+                x_col_name=var,
+                y_col_name=target_col_name,
+                title="Distribution of " + str(var) + " with " + target_col_name,
+                with_points=True,
+                view_chart=view_plots,
+                save_chart=save_plots,
+                file_path_image=output_folder_path
+                + "/charts/"
+                + "dist_numerical_"
+                + var
+                + "_"
+                + target_col_name
+                + ".png",
+            )
+
+            plot_violinplot(
+                data=data,
+                x_col_name=var,
+                y_col_name=target_col_name,
+                title="Distribution of " + str(var) + " with " + target_col_name,
+                with_box=True,
+                view_chart=view_plots,
+                save_chart=save_plots,
+                file_path_image=output_folder_path
+                + "/charts/"
+                + "dist_numerical_"
+                + var
+                + "_"
+                + target_col_name
+                + ".png",
+            )
+
+        for var in numerical_variables:
+            plot_scatter(
+                data=data,
+                x_col_name=var,
+                y_col_name=target_col_name,
+                title="Correlation of " + var + " and " + target_col_name,
+                # text_annotation="Pearson:{:.2f} Spearman:{:.2f} Kendall:{:.2f}".format(
+                #     pearson_metric, spearman_metric, kendall_metric
+                # ),
+                x_text_annotation=0.95,
+                y_text_annotation=0.9,
+                with_trendline=True,
+                view_chart=view_plots,
+                save_chart=save_plots,
+                file_path_image=output_folder_path
+                + "/charts/"
+                + "corr_numerical_"
+                + var
+                + "_"
+                + target_col_name
+                + ".png",
+            )
+
+        plot_bar(
+            data=metrics,
+            x_col_name=metrics["value"],
+            y_col_name=metrics["variable_1"],
+            color_col_name=metrics["metric"],
+            facet_row_name=metrics["metric"],
+            title="Association with " + target_col_name,
+            orientation="h",
+            view_chart=view_plots,
+            save_chart=save_plots,
+            file_path_image=output_folder_path
+            + "/charts/"
+            + prefix_label
+            + "eda_ks_"
+            + ".png",
+        )
+
+
 def categorical_target_association_analysis(
     data: pd,
     date_col_name: str,
@@ -459,6 +759,29 @@ def categorical_target_association_analysis(
     # values distribution for each class
     if log:
         log.subtitle("Values distribution for each class")
+
+    # association metrics
+    if target_col_name not in categorical_variables:
+        categorical_variables.append(target_col_name)
+
+    metrics = get_association_statistics(
+        data=data,
+        numerical_variables=numerical_variables,
+        categorical_variables=categorical_variables,
+        view_plots=view_plots,
+        save_plots=save_plots,
+        save_analysis=save_analysis,
+        output_folder_path=output_folder_path,
+        prefix_label=prefix_label,
+        log=log,
+    )
+
+    # excluindo variavel target para nao quebrar demais funcoes
+    categorical_variables.remove(target_col_name)
+
+    # filtrando somente resultados com target
+    metrics = metrics[metrics["variable_2"] == target_col_name]
+    metrics = metrics[metrics["variable_1"] != target_col_name]
 
     if view_plots or save_plots:
 
@@ -518,6 +841,24 @@ def categorical_target_association_analysis(
                 + target_col_name
                 + ".png",
             )
+
+    # association resume
+    plot_bar(
+        data=metrics,
+        x_col_name=metrics["value"],
+        y_col_name=metrics["variable_1"],
+        color_col_name=metrics["metric"],
+        facet_row_name=metrics["metric"],
+        title="Association with " + target_col_name,
+        orientation="h",
+        view_chart=view_plots,
+        save_chart=save_plots,
+        file_path_image=output_folder_path
+        + "/charts/"
+        + prefix_label
+        + "eda_ks_"
+        + ".png",
+    )
 
     # information value (numerical + categorical)
     if log:

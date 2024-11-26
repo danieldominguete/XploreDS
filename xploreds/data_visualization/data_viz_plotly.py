@@ -256,54 +256,57 @@ def plot_perc_bar(
     view_chart: bool = True,
     save_chart: bool = False,
     file_path_image: str = None,
+    log=None,
 ):
 
-    # agregacao por categoria
-    data_agg = (
-        data.groupby([x_col_name, y_col_name])
-        .agg(
-            {
-                y_col_name: [
-                    ("count", "count"),
-                    # Calculate percentage within each _dt_trunc group
-                    (
-                        "perc",
-                        lambda x: 100
-                        * len(x)
-                        / len(x.groupby(level=-1).transform("count")),
-                    ),
-                ]
-            }
+    # evitando analisar a variavel por ela mesma
+    if x_col_name == y_col_name:
+        if log:
+            log.warning(
+                "Variavel analisada deve ser diferente da variavel de agrupamento"
+            )
+        return
+    else:
+
+        # agregacao por categoria
+        data_agg = (
+            data.groupby([x_col_name, y_col_name])
+            .agg(
+                {
+                    y_col_name: [
+                        ("count", "count"),
+                    ]
+                }
+            )
+            .reset_index()
         )
-        .reset_index()
-    )
 
-    data_agg.columns = (
-        [x_col_name] + [y_col_name] + [f"{col[1]}" for col in data_agg.columns[2:]]
-    )
+        data_agg.columns = (
+            [x_col_name] + [y_col_name] + [f"{col[1]}" for col in data_agg.columns[2:]]
+        )
 
-    # Calculate percentages within each _dt_trunc group (relative to time period)
-    data_agg["perc_by_x_class"] = data_agg.groupby(x_col_name)["count"].transform(
-        lambda x: 100 * x / x.sum()
-    )
+        # Calculate percentages within each _dt_trunc group (relative to time period)
+        data_agg["perc_by_x_class"] = data_agg.groupby(x_col_name)["count"].transform(
+            lambda x: 100 * x / x.sum()
+        )
 
-    # Calculate overall percentage (relative to total dataset)
-    total_records = data_agg["count"].sum()
-    data_agg["perc_total"] = 100 * data_agg["count"] / total_records
+        # Calculate overall percentage (relative to total dataset)
+        total_records = data_agg["count"].sum()
+        data_agg["perc_total"] = 100 * data_agg["count"] / total_records
 
-    # Plot with overall percentages
-    plot_bar(
-        data=data_agg,
-        x_col_name=x_col_name,
-        y_col_name="perc_by_x_class",
-        color_col_name=y_col_name,
-        title=title,
-        barmode="stack",
-        orientation="v",
-        view_chart=view_chart,
-        save_chart=save_chart,
-        file_path_image=file_path_image,
-    )
+        # Plot with overall percentages
+        plot_bar(
+            data=data_agg,
+            x_col_name=x_col_name,
+            y_col_name="perc_by_x_class",
+            color_col_name=y_col_name,
+            title=title,
+            barmode="stack",
+            orientation="v",
+            view_chart=view_chart,
+            save_chart=save_chart,
+            file_path_image=file_path_image,
+        )
 
 
 def plot_bar(
@@ -311,6 +314,8 @@ def plot_bar(
     x_col_name: str,
     y_col_name: str,
     color_col_name: str = None,
+    facet_col_name: str = None,
+    facet_row_name: str = None,
     text_col_name: str = None,
     barmode: str = "group",
     orientation: str = "v",
@@ -342,11 +347,19 @@ def plot_bar(
         x=x_col_name,
         y=y_col_name,
         text=text_col_name,
+        facet_col=facet_col_name,
+        facet_row=facet_row_name,
         barmode=barmode,
         orientation=orientation,
         color=color_col_name,
         title=title,
     )
+
+    fig.update_yaxes(matches=None)
+    fig.for_each_yaxis(lambda yaxis: yaxis.update(showticklabels=True))
+
+    fig.update_xaxes(matches=None)
+    fig.for_each_xaxis(lambda xaxis: xaxis.update(showticklabels=True))
 
     if save_chart:
         save_chart_file(fig, file_path_image)
@@ -449,6 +462,77 @@ def plot_boxplot(
         )
     else:
         fig = px.box(data_frame=data, x=x_col_name, y=y_col_name, title=title)
+
+    if save_chart:
+        save_chart_file(fig, file_path_image)
+
+    if view_chart:
+        deploy_chart_in_navigator(fig)
+
+
+def plot_scatter(
+    data,
+    x_col_name: str,
+    y_col_name: str,
+    z_size_col_name: str = None,
+    x_range_limits: list = None,
+    y_range_limits: list = None,
+    group_color_col_name: str = None,
+    marginal_x: str = "histogram",
+    marginal_y: str = "histogram",
+    with_trendline: bool = False,
+    title: str = "",
+    text_annotation: str = None,
+    x_text_annotation: float = None,
+    y_text_annotation: float = None,
+    axis_names: list = None,
+    view_chart: bool = True,
+    save_chart: bool = False,
+    file_path_image: str = None,
+):
+    if with_trendline:
+        fig = px.scatter(
+            data_frame=data,
+            x=x_col_name,
+            y=y_col_name,
+            size=z_size_col_name,
+            color=group_color_col_name,
+            symbol=group_color_col_name,
+            marginal_x=marginal_x,
+            marginal_y=marginal_y,
+            title=title,
+            labels=axis_names,
+            trendline="ols",
+        )
+    else:
+        fig = px.scatter(
+            data_frame=data,
+            x=x_col_name,
+            y=y_col_name,
+            size=z_size_col_name,
+            color=group_color_col_name,
+            symbol=group_color_col_name,
+            marginal_x=marginal_x,
+            marginal_y=marginal_y,
+            title=title,
+            labels=axis_names,
+        )
+
+    if text_annotation:
+        fig.add_annotation(
+            text=text_annotation,
+            showarrow=False,
+            xref="paper",
+            yref="paper",
+            x=x_text_annotation,
+            y=y_text_annotation,
+        )
+
+    if x_range_limits is not None:
+        fig.update_xaxes(range=x_range_limits)
+
+    if y_range_limits is not None:
+        fig.update_yaxes(range=y_range_limits)
 
     if save_chart:
         save_chart_file(fig, file_path_image)
@@ -714,6 +798,41 @@ def plot_ks_score_over_time(
         legend_title="Legend",
         title=title,
         yaxis=dict(range=[0, 1]),
+    )
+
+    if save_chart:
+        save_chart_file(fig, file_path_image)
+
+    if view_chart:
+        deploy_chart_in_navigator(fig)
+
+
+def plot_heatmap(
+    data,
+    x_category_col_name: str,
+    y_category_col_name: str,
+    value_col_name: str,
+    title: str = "",
+    view_chart: bool = True,
+    save_chart: bool = False,
+    file_path_image: str = None,
+):
+
+    data_cross = pd.crosstab(
+        data[x_category_col_name],
+        data[y_category_col_name],
+        values=data[value_col_name],
+        aggfunc="mean",
+    )
+
+    fig = px.imshow(
+        data_cross,
+        x=data_cross.columns,
+        y=data_cross.index,
+        text_auto=".2f",
+        labels=dict(x=x_category_col_name, y=y_category_col_name, color=value_col_name),
+        color_continuous_scale=px.colors.sequential.Blues,
+        title=title,
     )
 
     if save_chart:

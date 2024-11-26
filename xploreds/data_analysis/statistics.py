@@ -21,10 +21,15 @@ from sklearn.metrics import roc_auc_score, auc
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import precision_recall_curve, roc_curve
 from scipy.stats import ks_2samp
+from scipy.stats import chi2_contingency
+from scipy.stats import pearsonr, spearmanr
+from scipy.stats import f_oneway, pointbiserialr
 
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib
 project_folder = Path(__file__).resolve().parents[2]
 sys.path.append(str(project_folder))
+
+from xploreds.data_handler.file import create_folder
 
 
 def get_mean_absolute_error(y_numerical_true, y_numerical_pred):
@@ -378,3 +383,156 @@ def get_information_value(
     df_woe.sort_values(by="woe", ascending=False, inplace=True)
 
     return df_iv, df_woe
+
+
+def get_association_statistics(
+    data,
+    numerical_variables: list = None,
+    categorical_variables: list = None,
+    view_plots: bool = False,
+    save_plots: bool = False,
+    save_analysis: bool = False,
+    output_folder_path: str = None,
+    prefix_label: str = None,
+    log: object = None,
+):
+
+    var_1 = []
+    var_2 = []
+    metric = []
+    value = []
+    p_value = []
+
+    # numerical x numerical
+    if log:
+        log.subtitle("Numerical variables association metrics")
+    for n1 in numerical_variables:
+        for n2 in numerical_variables:
+
+            # pearson
+            var_1.append(n1)
+            var_2.append(n2)
+            metric.append("pearson")
+            # pearson_metric = data[[n1, n2]].corr(method="pearson").iloc[0, 1]
+            pearson_metric, pearson_p_value = pearsonr(data[n1], data[n2])
+            value.append(pearson_metric)
+            p_value.append(pearson_p_value)
+
+            # spearman
+            var_1.append(n1)
+            var_2.append(n2)
+            metric.append("spearman")
+            # spearman_metric = data[[n1, n2]].corr(method="spearman").iloc[0, 1]
+            spearman_metric, spearman_p_value = spearmanr(data[n1], data[n2])
+            value.append(spearman_metric)
+            p_value.append(spearman_p_value)
+
+            # kendall tau
+            var_1.append(n1)
+            var_2.append(n2)
+            metric.append("kendall")
+            kendall_metric = data[[n1, n2]].corr(method="kendall").iloc[0, 1]
+            value.append(kendall_metric)
+            p_value.append(None)
+
+    # numerical x categorical
+    if log:
+        log.subtitle("Numerical and categorical variables association metrics")
+    for n1 in numerical_variables:
+        for n2 in categorical_variables:
+
+            # point biserial (2 classes)
+            if len(data[n2].unique()) == 2:
+                var_1.append(n1)
+                var_2.append(n2)
+                metric.append("point biserial")
+                point_biserial_metric, point_biserial_p_value = pointbiserialr(
+                    data[n2], data[n1]
+                )
+                value.append(point_biserial_metric)
+                p_value.append(point_biserial_p_value)
+
+                # repetindo o registro para similiaridade na matriz
+                var_2.append(n1)
+                var_1.append(n2)
+                metric.append("point biserial")
+                value.append(point_biserial_metric)
+                p_value.append(point_biserial_p_value)
+
+            # ANOVA (3 ou mais classes)
+            elif len(data[n2].unique()) > 2:
+
+                var_1.append(n1)
+                var_2.append(n2)
+                metric.append("anova")
+                groups = [
+                    data[data[n2] == category][n1] for category in data[n2].unique()
+                ]
+                anova_metric, anova_p_value = f_oneway(*groups)
+                value.append(anova_metric)
+                p_value.append(anova_p_value)
+
+                # repetindo o registro para similiaridade na matriz
+                var_2.append(n1)
+                var_1.append(n2)
+                metric.append("anova")
+                value.append(anova_metric)
+                p_value.append(anova_p_value)
+
+    # categorical x categorical
+    if log:
+        log.subtitle("Categorical variables association metrics")
+    for n1 in categorical_variables:
+        for n2 in categorical_variables:
+
+            # Cramers's V
+            var_1.append(n1)
+            var_2.append(n2)
+            metric.append("cramers v")
+
+            contingency_table = pd.crosstab(data[n1], data[n2])
+            chi2, p, dof, ex = chi2_contingency(contingency_table)
+            n = contingency_table.sum().sum()
+            cramers_metric = np.sqrt(chi2 / (n * (min(contingency_table.shape) - 1)))
+            value.append(cramers_metric)
+            p_value.append(None)
+
+    # saving statistics
+    response = pd.DataFrame(
+        {
+            "variable_1": var_1,
+            "variable_2": var_2,
+            "metric": metric,
+            "value": value,
+        }
+    )
+
+    # # resume plots
+    # if view_plots or save_plots:
+
+    #     if log:
+    #         log.subtitle("Plotting variables association metrics")
+
+    #     for m in response["metric"].unique():
+    #         plot_bar(
+    #             data=response[response["metric"] == m],
+    #             x_col_name="variable_1",
+    #             y_col_name="value",
+    #             color_col_name="variable_2",
+    #             title="Metric of " + m,
+    #             view_chart=view_plots,
+    #             save_chart=save_plots,
+    #             file_path_image=output_folder_path + "/charts/" + "assoc_" + m + ".png",
+    #         )
+
+    #         plot_heatmap(
+    #             data=response[response["metric"] == m],
+    #             x_category_col_name="variable_1",
+    #             y_category_col_name="variable_2",
+    #             value_col_name="value",
+    #             title="Metric of " + m,
+    #             view_chart=view_plots,
+    #             save_chart=save_plots,
+    #             file_path_image=output_folder_path + "/charts/" + "assoc_" + m + ".png",
+    #         )
+    return response

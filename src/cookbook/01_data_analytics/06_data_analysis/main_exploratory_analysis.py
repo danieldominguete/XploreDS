@@ -22,6 +22,8 @@ from xploreds.data_analysis.eda import (
     descriptive_analysis,
     trend_analysis,
     categorical_target_association_analysis,
+    numerical_target_association_analysis,
+    variables_association_analysis,
 )
 
 # ==================================================================================
@@ -62,7 +64,7 @@ trend_analysis_date_trunc = "M"
 
 # EDA associacoes (correlacoes)
 exec_target_association_analysis = True
-exec_covariables_association_analysis = True
+exec_covariables_association_analysis = False
 
 # Output results
 view_plots = True
@@ -127,8 +129,33 @@ if exec_target_association_analysis:
         log=log,
     )
 
+    numerical_target_association_analysis(
+        data=data,
+        target_col_name="age",
+        date_col_name=trend_analysis_date_ref,
+        numerical_variables=numerical_variables,
+        categorical_variables=categorical_variables,
+        view_plots=view_plots,
+        save_plots=save_plots,
+        save_analysis=save_analysis,
+        output_folder_path=log.log_path,
+        prefix_label="assoc_",
+        log=log,
+    )
+
 if exec_covariables_association_analysis:
     log.title("Covariables association analysis")
+    variables_association_analysis(
+        data=data,
+        numerical_variables=numerical_variables,
+        categorical_variables=categorical_variables,
+        view_plots=view_plots,
+        save_plots=save_plots,
+        save_analysis=save_analysis,
+        output_folder_path=log.log_path,
+        prefix_label="assoc_",
+        log=log,
+    )
 
 # ==================================================================================
 # Salvando artefatos de saida

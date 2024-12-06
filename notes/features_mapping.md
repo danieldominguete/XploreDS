@@ -63,7 +63,11 @@
 #### Target Association Analysis
 
 - Categorical Target
+  - Association metrics
   - WoE + IV
+  - KS
+- Numerical Target
+  - Correlation metrics
 
 ## Dataset Bulding
 

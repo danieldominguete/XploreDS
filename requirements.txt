@@ -16,3 +16,4 @@ commitizen
 setuptools
 wheel
 twine
+evidently==0.5.0

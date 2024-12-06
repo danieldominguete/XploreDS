@@ -21,12 +21,15 @@ from xploreds.data_visualization.data_viz_plotly import (
     plot_violinplot,
     plot_scatter,
     plot_heatmap,
+    plot_histogram,
 )
 from xploreds.data_analysis.statistics import (
     get_information_value,
     get_ks_score_from_numerical_covariables,
     get_association_statistics,
+    get_psi_score_from_numerical_covariables,
 )
+from xploreds.data_analysis.drift import get_drift_analysis
 
 
 def descriptive_analysis(
@@ -37,7 +40,7 @@ def descriptive_analysis(
     save_plots: bool = False,
     save_analysis: bool = False,
     output_folder_path: str = None,
-    prefix_label: str = None,
+    prefix_label: str = "eda",
     log: object = None,
 ) -> None:
 
@@ -48,26 +51,72 @@ def descriptive_analysis(
             log.subtitle("Numerical variables infos")
 
         num_variables_analysis = pd.DataFrame(
-            index=numerical_variables, columns=["not_nulls", "not_nulls_perc", "mean"]
+            index=numerical_variables,
+            columns=[
+                "count",
+                "not_nulls",
+                "not_nulls_perc",
+                "min",
+                "mean",
+                "median",
+                "max",
+                "q1",
+                "q3",
+            ],
         )
 
         for var in numerical_variables:
 
+            log.info("Descriptive statistics of " + str(var) + ":")
+
+            # count
+            value = data[var].count()
+            log.info("Count: " + " = {:.0f}".format(value))
+            num_variables_analysis["count"].loc[var] = value
+
             # not nulls
             value = data[var].notna().sum()
-            log.info("Not Null Var: " + str(var) + " = {:.4f}".format(value))
+            log.info("Not Null: " + " = {:.0f}".format(value))
             num_variables_analysis["not_nulls"].loc[var] = value
 
             # not nulls (%)
             value = 100 * (data[var].notna().sum() / data[var].shape[0])
-            log.info("Not Null Var: " + str(var) + " = {:.2f}%".format(value))
+            log.info("Not Null: " + " = {:.2f}%".format(value))
             num_variables_analysis["not_nulls_perc"].loc[var] = value
+
+            # min
+            value = data[var].min()
+            log.info("Min: " + " = {:.4f}".format(value))
+            num_variables_analysis["min"].loc[var] = value
 
             # average
             value = data[var].mean()
-            log.info("Mean Var: " + str(var) + " = {:.4f}".format(value))
+            log.info("Mean: " + " = {:.4f}".format(value))
             num_variables_analysis["mean"].loc[var] = value
 
+            # mediana
+            value = data[var].median()
+            log.info("Median(50%): " + " = {:.4f}".format(value))
+            num_variables_analysis["median"].loc[var] = value
+
+            # max
+            value = data[var].max()
+            log.info("Max: " + " = {:.4f}".format(value))
+            num_variables_analysis["max"].loc[var] = value
+
+            # Q1
+            value = data[var].quantile(q=0.25, interpolation="linear")
+            log.info("Q1(25%): " + " = {:.4f}".format(value))
+            num_variables_analysis["q1"].loc[var] = value
+
+            # Q3
+            value = data[var].quantile(q=0.75, interpolation="linear")
+            log.info("Q3(75%): " + " = {:.4f}".format(value))
+            num_variables_analysis["q3"].loc[var] = value
+
+            log.info(
+                "----------------------------------------------------------------------------------"
+            )
         num_variables_analysis = num_variables_analysis.reset_index(
             names=["variable_name"]
         )
@@ -80,25 +129,42 @@ def descriptive_analysis(
 
         cat_variables_analysis = pd.DataFrame(
             index=categorical_variables,
-            columns=["not_nulls", "not_nulls_perc", "unique"],
+            columns=["count", "not_nulls", "not_nulls_perc", "unique", "top"],
         )
 
         for var in categorical_variables:
 
+            log.info("Descriptive statistics of " + str(var) + ":")
+
+            # count
+            value = data[var].count()
+            log.info("Count: " + " = {:.0f}".format(value))
+            cat_variables_analysis["count"].loc[var] = value
+
             # not nulls
             value = data[var].notna().sum()
-            log.info("Not Null Var: " + str(var) + " = {:.4f}".format(value))
+            log.info("Not Null: " + " = {:.0f}".format(value))
             cat_variables_analysis["not_nulls"].loc[var] = value
 
             # not nulls (%)
             value = 100 * (data[var].notna().sum() / data[var].shape[0])
-            log.info("Not Null Var: " + str(var) + " = {:.2f}%".format(value))
+            log.info("Not Null: " + " = {:.2f}%".format(value))
             cat_variables_analysis["not_nulls_perc"].loc[var] = value
 
             # unique
             value = len(data[var].unique())
-            log.info("Unique Var: " + str(var) + " = {:.4f}".format(value))
+            log.info("Unique: " + " = {:.0f}".format(value))
             cat_variables_analysis["unique"].loc[var] = value
+
+            # top
+
+            value = data[var].mode()[0]
+            log.info("Top: " + " = {}".format(value))
+            cat_variables_analysis["top"].loc[var] = value
+
+            log.info(
+                "----------------------------------------------------------------------------------"
+            )
 
         cat_variables_analysis = cat_variables_analysis.reset_index(
             names=["variable_name"]
@@ -112,7 +178,10 @@ def descriptive_analysis(
             log.info("Saving descriptive analysis...")
 
         full_path = (
-            output_folder_path + "/reports/" + prefix_label + "describe_statistics.xlsx"
+            output_folder_path
+            + "/reports/"
+            + prefix_label
+            + "_describe_statistics.xlsx"
         )
 
         # verificando se a pasta existe caso contrario criar a pasta
@@ -139,33 +208,72 @@ def descriptive_analysis(
             if stat != "variable_name":
                 plot_bar(
                     data=num_variables_analysis,
-                    x_col_name=num_variables_analysis["variable_name"],
-                    y_col_name=num_variables_analysis[stat],
+                    y_col_name=num_variables_analysis["variable_name"],
+                    x_col_name=num_variables_analysis[stat],
+                    orientation="h",
                     title="Metric of " + stat,
                     view_chart=view_plots,
                     save_chart=save_plots,
                     file_path_image=output_folder_path
                     + "/charts/"
                     + prefix_label
-                    + var
+                    + "_numeric_vars_"
+                    + stat
                     + ".png",
                 )
+
+        # distribution values
+        log.info("Plotting distribution of numerical variables...")
+        for var in numerical_variables:
+            plot_histogram(
+                data=data,
+                x_col_name=var,
+                marginal_plot_type="box",
+                title="Distribution of " + var,
+                view_chart=view_plots,
+                save_chart=save_plots,
+                file_path_image=output_folder_path
+                + "/charts/"
+                + prefix_label
+                + "_numerical_"
+                + var
+                + "_distribution.png",
+            )
 
         for stat in cat_variables_analysis.columns:
             if stat != "variable_name":
                 plot_bar(
                     data=cat_variables_analysis,
-                    x_col_name=cat_variables_analysis["variable_name"],
-                    y_col_name=cat_variables_analysis[stat],
+                    y_col_name=cat_variables_analysis["variable_name"],
+                    x_col_name=cat_variables_analysis[stat],
+                    orientation="h",
                     title="Metric of " + stat,
                     view_chart=view_plots,
                     save_chart=save_plots,
                     file_path_image=output_folder_path
                     + "/charts/"
                     + prefix_label
-                    + var
+                    + "_categorical_vars_"
+                    + stat
                     + ".png",
                 )
+
+        # distribution values
+        log.info("Plotting distribution of categorical variables...")
+        for var in categorical_variables:
+            plot_histogram(
+                data=data,
+                x_col_name=var,
+                title="Distribution of " + var,
+                view_chart=view_plots,
+                save_chart=save_plots,
+                file_path_image=output_folder_path
+                + "/charts/"
+                + prefix_label
+                + "_categorical_"
+                + var
+                + "_distribution.png",
+            )
 
 
 def trend_analysis(
@@ -179,7 +287,7 @@ def trend_analysis(
     save_plots: bool = False,
     save_analysis: bool = False,
     output_folder_path: str = None,
-    prefix_label: str = None,
+    prefix_label: str = "eda",
     log: object = None,
 ) -> None:
     """
@@ -204,93 +312,60 @@ def trend_analysis(
     """
 
     # ----------------------------------------------------------
-    # datetime index
+    # datetime index for time series
     data.index = pd.to_datetime(data[date_col_name], format=date_col_format)
     data = data.sort_index(ascending=True)
 
     # ----------------------------------------------------------
-    # trunc by date
+    # trunc by date for agregate date values
     if date_trunc_by is not None:
         data["_dt_trunc"] = data.index.to_period(date_trunc_by).to_timestamp()
 
     # ----------------------------------------------------------
+    # metrics of drift between all data and each date_trunc period
+    # ----------------------------------------------------------
     # numerical variable analysis
+    num_variables_psi_analysis = pd.DataFrame(
+        index=data["_dt_trunc"].unique(),
+        columns=numerical_variables,
+    )
+
     if len(numerical_variables) > 0:
-        if log:
-            log.subtitle("Numerical variables trends")
+        for time in data["_dt_trunc"].unique():
+            for var in numerical_variables:
+                log.info(
+                    "Calculating drift scores at "
+                    + str(time)
+                    + " for "
+                    + str(var)
+                    + "..."
+                )
 
-        num_variables_analysis = pd.DataFrame(
-            index=numerical_variables, columns=["not_nulls", "not_nulls_perc"]
-        )
+                data_temp = data[data["_dt_trunc"] == time]
 
-        for var in numerical_variables:
+                # PSI
+                value = get_psi_score_from_numerical_covariables(
+                    expected_data=data,
+                    expected_column_name=var,
+                    actual_data=data_temp,
+                    actual_column_name=var,
+                    buckettype="quantiles",
+                    buckets=100,
+                    log=log,
+                )
 
-            # not nulls
-            value = data[var].notna().sum()
-            log.info("Not Null Var: " + str(var) + " = {:.4f}".format(value))
-            num_variables_analysis["not_nulls"].loc[var] = value
-
-            # not nulls (%)
-            value = 100 * (data[var].notna().sum() / data[var].shape[0])
-            log.info("Not Null Var: " + str(var) + " = {:.2f}%".format(value))
-            num_variables_analysis["not_nulls_perc"].loc[var] = value
-
-        num_variables_analysis = num_variables_analysis.reset_index(
-            names=["variable_name"]
-        )
-
-    # ----------------------------------------------------------
-    # categorical variables analysis
-    if len(categorical_variables) > 0:
-        if log:
-            log.subtitle("Categorical variables infos")
-
-        cat_variables_analysis = pd.DataFrame(
-            index=categorical_variables,
-            columns=["not_nulls", "not_nulls_perc", "unique"],
-        )
-
-        for var in categorical_variables:
-
-            # not nulls
-            value = data[var].notna().sum()
-            log.info("Not Null Var: " + str(var) + " = {:.4f}".format(value))
-            cat_variables_analysis["not_nulls"].loc[var] = value
-
-            # not nulls (%)
-            value = 100 * (data[var].notna().sum() / data[var].shape[0])
-            log.info("Not Null Var: " + str(var) + " = {:.2f}%".format(value))
-            cat_variables_analysis["not_nulls_perc"].loc[var] = value
-
-        cat_variables_analysis = cat_variables_analysis.reset_index(
-            names=["variable_name"]
-        )
-
-    # ----------------------------------------------------------
-    # saving statistics
-    if save_analysis:
-
-        if log:
-            log.info("Saving trend analysis...")
-
-        full_path = (
-            output_folder_path + "/reports/" + prefix_label + "trend_statistics.xlsx"
-        )
-
-        # verificando se a pasta existe caso contrario criar a pasta
-        create_folder(os.path.dirname(full_path))
-
-        # Multiple DataFrames to different sheets
-        with pd.ExcelWriter(full_path) as writer:
-            num_variables_analysis.to_excel(
-                writer, sheet_name="numerical_variables", index=False
-            )
-            cat_variables_analysis.to_excel(
-                writer, sheet_name="categorical_variables", index=False
-            )
-
-        if log:
-            log.info("Trend analysis saved in " + full_path)
+                num_variables_psi_analysis[var].loc[time] = value
+                value2 = get_drift_analysis(
+                    expected_data=data,
+                    actual_data=data_temp,
+                    column_selected=var,
+                )
+                log.info(
+                    "PSI: " + str(var) + " at " + str(time) + " = {:.4f}".format(value)
+                )
+                log.info(
+                    "PSI: " + str(var) + " at " + str(time) + " = {:.4f}".format(value2)
+                )
 
     # ----------------------------------------------------------
     # saving charts
@@ -298,38 +373,6 @@ def trend_analysis(
 
         if log:
             log.info("Plotting trend analysis...")
-
-        for stat in num_variables_analysis.columns:
-            if stat != "variable_name":
-                plot_bar(
-                    data=num_variables_analysis,
-                    x_col_name=num_variables_analysis["variable_name"],
-                    y_col_name=num_variables_analysis[stat],
-                    title="Metric of " + stat,
-                    view_chart=view_plots,
-                    save_chart=save_plots,
-                    file_path_image=output_folder_path
-                    + "/charts/"
-                    + prefix_label
-                    + stat
-                    + ".png",
-                )
-
-        for stat in cat_variables_analysis.columns:
-            if stat != "variable_name":
-                plot_bar(
-                    data=cat_variables_analysis,
-                    x_col_name=cat_variables_analysis["variable_name"],
-                    y_col_name=cat_variables_analysis[stat],
-                    title="Metric of " + stat,
-                    view_chart=view_plots,
-                    save_chart=save_plots,
-                    file_path_image=output_folder_path
-                    + "/charts/"
-                    + prefix_label
-                    + stat
-                    + ".png",
-                )
 
         for var in numerical_variables:
 
@@ -433,6 +476,7 @@ def trend_analysis(
                     x_col_name="_dt_trunc",
                     y_col_name="perc_by_period",  # Using overall percentage
                     color_col_name=var,
+                    barmode="stack",
                     title=f"Distribution trend of {var} (% of total)",
                     view_chart=view_plots,
                     save_chart=save_plots,

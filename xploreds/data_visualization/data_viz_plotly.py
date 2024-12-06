@@ -100,6 +100,8 @@ def plot_scatter_2d(
 def plot_histogram(
     data,
     x_col_name,
+    group_col_name: str = None,
+    marginal_plot_type: str = None,
     title: str = "",
     view_chart: bool = True,
     save_chart: bool = False,
@@ -120,7 +122,13 @@ def plot_histogram(
         None
     """
 
-    fig = px.histogram(data_frame=data, x=x_col_name, title=title)
+    fig = px.histogram(
+        data_frame=data,
+        x=x_col_name,
+        color=group_col_name,
+        marginal=marginal_plot_type,
+        title=title,
+    )
 
     if save_chart:
         save_chart_file(fig, file_path_image)

@@ -52,19 +52,20 @@ input_dataset_file_path = "data/credit-g/processed/credit-g_master_table.parquet
 
 numerical_variables = ["duration", "credit_amount", "age", "num_dependents"]
 categorical_variables = ["purpose", "employment", "personal_status"]
-target_variable = "class_bad"
+categorical_target_variable = "class_bad"
+numerical_target_variable = None
 
-# EDA descritiva geral
+# EDA univariada descritiva geral
 exec_descritive_analysis = False
 
-# EDA tendencias temporais
-exec_trend_analysis = False
+# EDA univariada tendencias temporais
+exec_trend_analysis = True
 trend_analysis_date_ref = "transaction_date"
 trend_analysis_date_trunc = "M"
 
-# EDA associacoes (correlacoes)
+# EDA multivariada associacoes (correlacoes)
 exec_target_association_analysis = True
-exec_covariables_association_analysis = False
+exec_covariables_association_analysis = True
 
 # Output results
 view_plots = True
@@ -88,12 +89,11 @@ if exec_descritive_analysis:
     descriptive_analysis(
         data=data,
         numerical_variables=numerical_variables,
-        categorical_variables=categorical_target_association_analysis,
+        categorical_variables=categorical_variables,
         view_plots=view_plots,
         save_plots=save_plots,
         save_analysis=save_analysis,
         output_folder_path=log.log_path,
-        prefix_label="descriptive_",
         log=log,
     )
 
@@ -109,7 +109,6 @@ if exec_trend_analysis:
         save_plots=save_plots,
         save_analysis=save_analysis,
         output_folder_path=log.log_path,
-        prefix_label="trend_",
         log=log,
     )
 

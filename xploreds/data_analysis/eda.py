@@ -20,16 +20,15 @@ from xploreds.data_visualization.data_viz_plotly import (
     plot_perc_bar,
     plot_violinplot,
     plot_scatter,
-    plot_heatmap,
+    plot_heatmap_simple,
     plot_histogram,
 )
 from xploreds.data_analysis.statistics import (
     get_information_value,
     get_ks_score_from_numerical_covariables,
     get_association_statistics,
-    get_psi_score_from_numerical_covariables,
 )
-from xploreds.data_analysis.drift import get_drift_analysis
+from xploreds.data_analysis.drift import calculate_psi_score
 
 
 def descriptive_analysis(
@@ -38,7 +37,7 @@ def descriptive_analysis(
     categorical_variables: list = None,
     view_plots: bool = False,
     save_plots: bool = False,
-    save_analysis: bool = False,
+    save_analysis: bool = True,
     output_folder_path: str = None,
     prefix_label: str = "eda",
     log: object = None,
@@ -285,7 +284,7 @@ def trend_analysis(
     categorical_variables: list = None,
     view_plots: bool = False,
     save_plots: bool = False,
-    save_analysis: bool = False,
+    save_analysis: bool = True,
     output_folder_path: str = None,
     prefix_label: str = "eda",
     log: object = None,
@@ -317,55 +316,9 @@ def trend_analysis(
     data = data.sort_index(ascending=True)
 
     # ----------------------------------------------------------
-    # trunc by date for agregate date values
-    if date_trunc_by is not None:
-        data["_dt_trunc"] = data.index.to_period(date_trunc_by).to_timestamp()
-
-    # ----------------------------------------------------------
-    # metrics of drift between all data and each date_trunc period
-    # ----------------------------------------------------------
-    # numerical variable analysis
-    num_variables_psi_analysis = pd.DataFrame(
-        index=data["_dt_trunc"].unique(),
-        columns=numerical_variables,
-    )
-
-    if len(numerical_variables) > 0:
-        for time in data["_dt_trunc"].unique():
-            for var in numerical_variables:
-                log.info(
-                    "Calculating drift scores at "
-                    + str(time)
-                    + " for "
-                    + str(var)
-                    + "..."
-                )
-
-                data_temp = data[data["_dt_trunc"] == time]
-
-                # PSI
-                value = get_psi_score_from_numerical_covariables(
-                    expected_data=data,
-                    expected_column_name=var,
-                    actual_data=data_temp,
-                    actual_column_name=var,
-                    buckettype="quantiles",
-                    buckets=100,
-                    log=log,
-                )
-
-                num_variables_psi_analysis[var].loc[time] = value
-                value2 = get_drift_analysis(
-                    expected_data=data,
-                    actual_data=data_temp,
-                    column_selected=var,
-                )
-                log.info(
-                    "PSI: " + str(var) + " at " + str(time) + " = {:.4f}".format(value)
-                )
-                log.info(
-                    "PSI: " + str(var) + " at " + str(time) + " = {:.4f}".format(value2)
-                )
+    # simple analysis for raw datetime reference
+    if log:
+        log.info("Trend analysis of raw datetime reference...")
 
     # ----------------------------------------------------------
     # saving charts
@@ -391,102 +344,194 @@ def trend_analysis(
                 + ".png",
             )
 
-            if date_trunc_by is not None:
+    # ----------------------------------------------------------
+    # agg analysis for raw datetime reference
+    if date_trunc_by is not None:
 
-                plot_boxplot(
-                    data=data,
-                    x_col_name=data["_dt_trunc"],
-                    y_col_name=data[var],
-                    title="Distribution trend of " + var,
-                    view_chart=view_plots,
-                    save_chart=save_plots,
-                    file_path_image=output_folder_path
-                    + "/charts/"
-                    + prefix_label
-                    + "_dist_trend_"
-                    + var
-                    + ".png",
-                )
+        if log:
+            log.info("Trend analysis of aggregated datetime reference...")
 
+        # ----------------------------------------------------------
+        # trunc by date for agregate date values
+        dt_agg_col = "date_time_agg"
+        data[dt_agg_col] = data.index.to_period(date_trunc_by).to_timestamp()
+
+        # ----------------------------------------------------------
+        # visualization of all data and each date_trunc period
+        # ----------------------------------------------------------
+        for var in numerical_variables:
+
+            plot_boxplot(
+                data=data,
+                x_col_name=data[dt_agg_col],
+                y_col_name=data[var],
+                title="Distribution trend of " + var,
+                view_chart=view_plots,
+                save_chart=save_plots,
+                file_path_image=output_folder_path
+                + "/charts/"
+                + prefix_label
+                + "_dist_trend_"
+                + var
+                + ".png",
+            )
+
+        # ----------------------------------------------------------
+        # categorical trend charts
         for var in categorical_variables:
 
-            if date_trunc_by is not None:
+            data_agg = (
+                data.groupby([dt_agg_col, var])
+                .agg(
+                    {
+                        var: [
+                            ("count", "count"),
+                            ("unique", "nunique"),
+                            ("nulls", lambda x: x.isnull().sum()),
+                            ("not_nulls", lambda x: x.notnull().sum()),
+                            # Calculate percentage within each _dt_trunc group
+                            (
+                                "perc",
+                                lambda x: 100
+                                * len(x)
+                                / len(x.groupby(level=0).transform("count")),
+                            ),
+                        ]
+                    }
+                )
+                .reset_index()
+            )
 
-                data_agg = (
-                    data.groupby(["_dt_trunc", var])
-                    .agg(
-                        {
-                            var: [
-                                ("count", "count"),
-                                ("unique", "nunique"),
-                                ("nulls", lambda x: x.isnull().sum()),
-                                ("not_nulls", lambda x: x.notnull().sum()),
-                                # Calculate percentage within each _dt_trunc group
-                                (
-                                    "perc",
-                                    lambda x: 100
-                                    * len(x)
-                                    / len(x.groupby(level=0).transform("count")),
-                                ),
-                            ]
-                        }
+            data_agg.columns = (
+                [dt_agg_col] + [var] + [f"{col[1]}" for col in data_agg.columns[2:]]
+            )
+
+            plot_bar(
+                data=data_agg,
+                x_col_name=data_agg[dt_agg_col],
+                y_col_name=data_agg["count"],
+                color_col_name=data_agg[var],
+                title="Distribution trend of " + var,
+                view_chart=view_plots,
+                save_chart=save_plots,
+                file_path_image=output_folder_path
+                + "/charts/"
+                + prefix_label
+                + "_dist_trend_"
+                + var
+                + ".png",
+            )
+
+            # Calculate counts and overall percentage
+            data_agg = data.groupby([dt_agg_col, var]).size().reset_index(name="count")
+
+            # Calculate percentages within each _dt_trunc group (relative to time period)
+            data_agg["perc_by_period"] = data_agg.groupby(dt_agg_col)[
+                "count"
+            ].transform(lambda x: 100 * x / x.sum())
+
+            # Calculate overall percentage (relative to total dataset)
+            total_records = data_agg["count"].sum()
+            data_agg["perc_total"] = 100 * data_agg["count"] / total_records
+
+            # Plot with overall percentages
+            plot_bar(
+                data=data_agg,
+                x_col_name=dt_agg_col,
+                y_col_name="perc_by_period",  # Using overall percentage
+                color_col_name=var,
+                barmode="stack",
+                title=f"Distribution trend of {var} (% of total)",
+                view_chart=view_plots,
+                save_chart=save_plots,
+                file_path_image=output_folder_path
+                + "/charts/"
+                + prefix_label
+                + "_dist_trend_percent_total_"
+                + var
+                + ".png",
+            )
+
+        # ----------------------------------------------------------
+        # metrics of drift between all data and each date_trunc period
+        # ----------------------------------------------------------
+        # numerical and categorical variable analysis
+        variables = numerical_variables + categorical_variables
+
+        variables_psi_analysis = pd.DataFrame(
+            index=data[dt_agg_col].unique(),
+            columns=variables,
+        )
+
+        if len(variables) > 0:
+            for time in data[dt_agg_col].unique():
+                for var in variables:
+                    log.info(
+                        "Calculating drift scores at "
+                        + str(time)
+                        + " for "
+                        + str(var)
+                        + "..."
                     )
-                    .reset_index()
-                )
 
-                data_agg.columns = (
-                    ["_dt_trunc"]
-                    + [var]
-                    + [f"{col[1]}" for col in data_agg.columns[2:]]
-                )
+                    data_temp = data[data[dt_agg_col] == time]
 
-                plot_bar(
-                    data=data_agg,
-                    x_col_name=data_agg["_dt_trunc"],
-                    y_col_name=data_agg["count"],
-                    color_col_name=data_agg[var],
-                    title="Distribution trend of " + var,
-                    view_chart=view_plots,
-                    save_chart=save_plots,
-                    file_path_image=output_folder_path
-                    + "/charts/"
-                    + prefix_label
-                    + "_dist_trend_"
-                    + var
-                    + ".png",
-                )
+                    value = calculate_psi_score(
+                        expected_df=data,
+                        actual_df=data_temp,
+                        column_name=var,
+                    )
 
-                # Calculate counts and overall percentage
-                data_agg = (
-                    data.groupby(["_dt_trunc", var]).size().reset_index(name="count")
-                )
+                    variables_psi_analysis[var].loc[time] = value
 
-                # Calculate percentages within each _dt_trunc group (relative to time period)
-                data_agg["perc_by_period"] = data_agg.groupby("_dt_trunc")[
-                    "count"
-                ].transform(lambda x: 100 * x / x.sum())
+                    log.info(
+                        "PSI: "
+                        + str(var)
+                        + " at "
+                        + str(time)
+                        + " = {:.4f}".format(value)
+                    )
 
-                # Calculate overall percentage (relative to total dataset)
-                total_records = data_agg["count"].sum()
-                data_agg["perc_total"] = 100 * data_agg["count"] / total_records
+        # Drift only for aggregate datetime
+        if log:
+            log.info("Plotting PSI drift analysis...")
 
-                # Plot with overall percentages
-                plot_bar(
-                    data=data_agg,
-                    x_col_name="_dt_trunc",
-                    y_col_name="perc_by_period",  # Using overall percentage
-                    color_col_name=var,
-                    barmode="stack",
-                    title=f"Distribution trend of {var} (% of total)",
-                    view_chart=view_plots,
-                    save_chart=save_plots,
-                    file_path_image=output_folder_path
-                    + "/charts/"
-                    + prefix_label
-                    + "_dist_trend_percent_total_"
-                    + var
-                    + ".png",
-                )
+        variables_psi_analysis = variables_psi_analysis.reset_index(names=[dt_agg_col])
+        plot_heatmap_simple(
+            data=variables_psi_analysis,
+            x_ref_col_name=dt_agg_col,
+            y_values_col_list=variables,
+            title="PSI drift analysis",
+            view_chart=view_plots,
+            save_chart=save_plots,
+            file_path_image=output_folder_path
+            + "/charts/"
+            + prefix_label
+            + "_psi_drift_analysis.png",
+        )
+
+    # ----------------------------------------------------------
+    # saving statistics
+    if save_analysis:
+
+        if log:
+            log.info("Saving trend analysis...")
+
+        full_path = (
+            output_folder_path + "/reports/" + prefix_label + "_trend_statistics.xlsx"
+        )
+
+        # verificando se a pasta existe caso contrario criar a pasta
+        create_folder(os.path.dirname(full_path))
+
+        # Multiple DataFrames to different sheets
+        with pd.ExcelWriter(full_path) as writer:
+            variables_psi_analysis.to_excel(
+                writer, sheet_name="psi_trend_analysis", index=False
+            )
+
+        if log:
+            log.info("Trend analysis saved in " + full_path)
 
 
 def variables_association_analysis(

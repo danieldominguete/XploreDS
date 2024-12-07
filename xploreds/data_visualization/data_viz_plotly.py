@@ -815,7 +815,89 @@ def plot_ks_score_over_time(
         deploy_chart_in_navigator(fig)
 
 
-def plot_heatmap(
+def plot_heatmap_simple(
+    data: pd.DataFrame,
+    x_ref_col_name: str = None,
+    y_values_col_list: list = None,
+    title: str = "",
+    colorscale: str = "Blues",
+    show_values: bool = True,
+    value_format: str = ".2f",
+    view_chart: bool = True,
+    save_chart: bool = False,
+    file_path_image: str = None,
+):
+    """
+    Create a heatmap visualization from a pandas DataFrame using plotly.
+
+    Args:
+        data: Input DataFrame
+        x_ref_col_name: Column to use as x-axis reference (if None, uses index)
+        y_values_col_list: List of columns to use as y-axis (if None, uses all numeric columns)
+        title: Chart title
+        colorscale: Color scale for heatmap (e.g. 'Blues', 'RdBu', 'Viridis')
+        show_values: Whether to show values in cells
+        value_format: Format string for cell values
+        view_chart: Whether to display the chart
+        save_chart: Whether to save the chart
+        file_path_image: Path to save the chart image
+    """
+    # If y_values_col_list not provided, use all numeric columns except x_ref
+    if y_values_col_list is None:
+        y_values_col_list = data.select_dtypes(include=[np.number]).columns.tolist()
+        if x_ref_col_name in y_values_col_list:
+            y_values_col_list.remove(x_ref_col_name)
+
+    # Prepare data matrix for heatmap
+    if x_ref_col_name is not None:
+        x_values = data[x_ref_col_name]
+    else:
+        x_values = data.index
+
+    # Create matrix for heatmap
+    z_values = data[y_values_col_list].values.T
+
+    # Create figure
+    fig = px.imshow(
+        z_values,
+        x=x_values,
+        y=y_values_col_list,
+        color_continuous_scale=colorscale,
+        title=title,
+        labels=dict(
+            x=x_ref_col_name if x_ref_col_name else "Index", y="Variable", color="Value"
+        ),
+    )
+
+    # Add value annotations if requested
+    if show_values:
+        # Format the text values according to the specified format
+        text_values = [[f"{val:{value_format}}" for val in row] for row in z_values]
+
+        fig.update_traces(
+            text=text_values,  # Use formatted text values
+            texttemplate="%{text}",  # Use the text values directly
+            textfont={"size": 10},
+            showscale=True,
+        )
+
+    # Update layout
+    fig.update_layout(
+        xaxis_title=x_ref_col_name if x_ref_col_name else "Index",
+        yaxis_title="Variables",
+        xaxis={"side": "bottom"},
+    )
+
+    if save_chart:
+        save_chart_file(fig, file_path_image)
+
+    if view_chart:
+        deploy_chart_in_navigator(fig)
+
+    return fig
+
+
+def plot_heatmap_from_melt(
     data,
     x_category_col_name: str,
     y_category_col_name: str,

@@ -4,27 +4,54 @@ Xplore DS :: Drift Data Analysis
 
 from evidently.metric_preset import DataDriftPreset
 from evidently.report import Report
+from evidently.metric_preset import DataDriftPreset
+from evidently.options.data_drift import DataDriftOptions
 import pandas as pd
 
 
-def get_drift_analysis(expected_data: pd, actual_data: pd, column_selected: str):
+def calculate_psi_score(
+    expected_df: pd.DataFrame,
+    actual_df: pd.DataFrame,
+    column_name: str,
+) -> float:
+    """
+    Calculate Population Stability Index (PSI) score between two dataframe columns with custom binning
 
-    data_drift_report = Report(
+    Args:
+        expected_df: Reference/expected dataframe
+        actual_df: Current/actual dataframe
+        column_name: Column name to compare
+        num_bins: Number of bins to use (default: 10)
+        bin_type: Type of binning strategy. Options:
+                 - 'auto': Automatically determine bin edges
+                 - 'uniform': Uniform bin sizes
+                 - 'quantile': Equal number of samples in each bin
+
+    Returns:
+        float: PSI drift score
+
+    Note:
+        PSI < 0.1: No significant distribution change
+        0.1 <= PSI < 0.2: Moderate distribution change
+        PSI >= 0.2: Significant distribution change
+    """
+
+    # Create drift report with PSI test and binning options
+    drift_report = Report(
         metrics=[
             DataDriftPreset(stattest="psi", stattest_threshold="0.3"),
         ]
     )
-    data_drift_report.run(
-        reference_data=expected_data[[column_selected]],
-        current_data=actual_data[[column_selected]],
-    )
-    report = data_drift_report.as_dict()
-    drift_detected = report["metrics"][1]["result"]["drift_by_columns"][
-        column_selected
-    ]["drift_detected"]
 
-    drift_score = report["metrics"][1]["result"]["drift_by_columns"][column_selected][
+    # Run analysis
+    drift_report.run(
+        reference_data=expected_df[[column_name]], current_data=actual_df[[column_name]]
+    )
+
+    # Extract PSI score from report
+    report_dict = drift_report.as_dict()
+    psi_score = report_dict["metrics"][1]["result"]["drift_by_columns"][column_name][
         "drift_score"
     ]
 
-    return drift_score
+    return psi_score

@@ -21,7 +21,7 @@ from xploreds.data_handler.file import load_dataframe_from_parquet
 from xploreds.data_analysis.eda import (
     descriptive_analysis,
     trend_analysis,
-    categorical_target_association_analysis,
+    categorical_target_variable_association_analysis,
     numerical_target_association_analysis,
     variables_association_analysis,
 )
@@ -53,10 +53,10 @@ input_dataset_file_path = "data/credit-g/processed/credit-g_master_table.parquet
 numerical_variables = ["duration", "credit_amount", "age", "num_dependents"]
 categorical_variables = ["purpose", "employment", "personal_status"]
 categorical_target_variable = "class_bad"
-numerical_target_variable = None
+numerical_target_variable = "age"
 
 # EDA univariada descritiva geral
-exec_descritive_analysis = False
+exec_descritive_analysis = True
 
 # EDA univariada tendencias temporais
 exec_trend_analysis = True
@@ -114,31 +114,29 @@ if exec_trend_analysis:
 
 if exec_target_association_analysis:
     log.title("Target association analysis")
-    categorical_target_association_analysis(
+    categorical_target_variable_association_analysis(
         data=data,
-        target_col_name="class_bad",
-        date_col_name=trend_analysis_date_ref,
+        categorical_target_col_name=categorical_target_variable,
         numerical_variables=numerical_variables,
         categorical_variables=categorical_variables,
         view_plots=view_plots,
         save_plots=save_plots,
         save_analysis=save_analysis,
         output_folder_path=log.log_path,
-        prefix_label="assoc_",
+        prefix_label="eda_",
         log=log,
     )
 
     numerical_target_association_analysis(
         data=data,
-        target_col_name="age",
-        date_col_name=trend_analysis_date_ref,
+        numerical_target_col_name=numerical_target_variable,
         numerical_variables=numerical_variables,
         categorical_variables=categorical_variables,
         view_plots=view_plots,
         save_plots=save_plots,
         save_analysis=save_analysis,
         output_folder_path=log.log_path,
-        prefix_label="assoc_",
+        prefix_label="eda_",
         log=log,
     )
 
@@ -155,12 +153,6 @@ if exec_covariables_association_analysis:
         prefix_label="assoc_",
         log=log,
     )
-
-# ==================================================================================
-# Salvando artefatos de saida
-# ==================================================================================
-
-log.title("Saving output artifacts")
 
 # ==================================================================================
 # Encerramento do script

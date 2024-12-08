@@ -2,56 +2,61 @@
 Xplore DS :: Drift Data Analysis
 """
 
-from evidently.metric_preset import DataDriftPreset
-from evidently.report import Report
-from evidently.metric_preset import DataDriftPreset
-from evidently.options.data_drift import DataDriftOptions
+from evidently.calculations.stattests import psi_stat_test
 import pandas as pd
 
 
 def calculate_psi_score(
-    expected_df: pd.DataFrame,
-    actual_df: pd.DataFrame,
+    reference_data: pd.DataFrame,
+    current_data: pd.DataFrame,
     column_name: str,
-) -> float:
+    feature_type: str = "num",  # "num", "cat", "text", "datetime", "date", "id", "unknown"
+    threshold: float = 0.2,  # PSI threshold for drift detection
+):
     """
-    Calculate Population Stability Index (PSI) score between two dataframe columns with custom binning
+        Calculate PSI score using EvidendlyAI's psi_stat_test function with all available parameters.
 
-    Args:
-        expected_df: Reference/expected dataframe
-        actual_df: Current/actual dataframe
-        column_name: Column name to compare
-        num_bins: Number of bins to use (default: 10)
-        bin_type: Type of binning strategy. Options:
-                 - 'auto': Automatically determine bin edges
-                 - 'uniform': Uniform bin sizes
-                 - 'quantile': Equal number of samples in each bin
+        Args:
+            reference_data: Reference/baseline distribution
+            current_data: Current/production distribution
+            feature_type: Type of feature being analyzed:
+                - "num": Numerical
+                - "cat": Categorical
+                - "text": Text data
+                - "datetime": Datetime
+                - "date": Date
+                - "id": Identifier
+                - "unknown": Unknown type
+            threshold: PSI threshold for drift detection (default: 0.2)
+            num_bins: Number of bins for numerical data (default: 10)
+            bin_strategy: Binning strategy for numerical data:
+                - "quantile": Equal-frequency binning
+                - "uniform": Equal-width binning
+                - "auto": Automatic binning
+            min_samples: Minimum number of samples required (default: 50)
+            aggregation: Aggregation method for datetime/date features (default: "mean")
+            datetime_aggregation_window: Time window for datetime aggregation (default: "D")
+            confidence: Confidence level for statistical test (default: 0.95)
+            cat_top_k: Number of top categories to consider for categorical features
 
-    Returns:
-        float: PSI drift score
+        Returns:
+            StatTest object with drift results
 
-    Note:
-        PSI < 0.1: No significant distribution change
-        0.1 <= PSI < 0.2: Moderate distribution change
-        PSI >= 0.2: Significant distribution change
+        Note:
+    #         PSI < 0.1: No significant distribution change
+    #         0.1 <= PSI < 0.2: Moderate distribution change
+    #         PSI >= 0.2: Significant distribution change
     """
 
-    # Create drift report with PSI test and binning options
-    drift_report = Report(
-        metrics=[
-            DataDriftPreset(stattest="psi", stattest_threshold="0.3"),
-        ]
+    # Extract columns
+    reference_data = reference_data[column_name]
+    current_data = current_data[column_name]
+
+    result = psi_stat_test(
+        reference_data=reference_data,
+        current_data=current_data,
+        feature_type=feature_type,
+        threshold=threshold,
     )
 
-    # Run analysis
-    drift_report.run(
-        reference_data=expected_df[[column_name]], current_data=actual_df[[column_name]]
-    )
-
-    # Extract PSI score from report
-    report_dict = drift_report.as_dict()
-    psi_score = report_dict["metrics"][1]["result"]["drift_by_columns"][column_name][
-        "drift_score"
-    ]
-
-    return psi_score
+    return result.drift_score, bool(result.drifted)

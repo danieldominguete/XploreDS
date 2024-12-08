@@ -81,6 +81,14 @@ def get_gini_score_for_binary_classifier(y_numerical_true, y_numerical_score_pre
 
 
 def get_ks_score_for_binary_classifier(y_numerical_true, y_numerical_score_pred):
+
+    # verificando padrao de nomenclatura de classes
+    if len(np.unique(y_numerical_true)) != 2:
+        raise ValueError(
+            "Cannot calculate KS statistic for data with "
+            "{} category/ies".format(len(np.unique(y_numerical_true)))
+        )
+
     v = ks_2samp(
         y_numerical_score_pred[y_numerical_true == 0],
         y_numerical_score_pred[y_numerical_true == 1],
@@ -327,9 +335,6 @@ def get_information_value(
 
     for var in var_list:
 
-        if log:
-            log.info("Processing IV of variable {} ...".format(var))
-
         if var in var_categorical_column_name:
             data_temp = data[[var, y_true_numeric_column_name]]
 
@@ -389,11 +394,6 @@ def get_association_statistics(
     data,
     numerical_variables: list = None,
     categorical_variables: list = None,
-    view_plots: bool = False,
-    save_plots: bool = False,
-    save_analysis: bool = False,
-    output_folder_path: str = None,
-    prefix_label: str = None,
     log: object = None,
 ):
 
@@ -405,7 +405,7 @@ def get_association_statistics(
 
     # numerical x numerical
     if log:
-        log.subtitle("Numerical variables association metrics")
+        log.info("Numerical variables association metrics calculation...")
     for n1 in numerical_variables:
         for n2 in numerical_variables:
 
@@ -437,7 +437,9 @@ def get_association_statistics(
 
     # numerical x categorical
     if log:
-        log.subtitle("Numerical and categorical variables association metrics")
+        log.info(
+            "Numerical and categorical variables association metrics calculation ..."
+        )
     for n1 in numerical_variables:
         for n2 in categorical_variables:
 
@@ -481,7 +483,7 @@ def get_association_statistics(
 
     # categorical x categorical
     if log:
-        log.subtitle("Categorical variables association metrics")
+        log.info("Categorical variables association metrics calculation ...")
     for n1 in categorical_variables:
         for n2 in categorical_variables:
 
@@ -506,33 +508,4 @@ def get_association_statistics(
             "value": value,
         }
     )
-
-    # # resume plots
-    # if view_plots or save_plots:
-
-    #     if log:
-    #         log.subtitle("Plotting variables association metrics")
-
-    #     for m in response["metric"].unique():
-    #         plot_bar(
-    #             data=response[response["metric"] == m],
-    #             x_col_name="variable_1",
-    #             y_col_name="value",
-    #             color_col_name="variable_2",
-    #             title="Metric of " + m,
-    #             view_chart=view_plots,
-    #             save_chart=save_plots,
-    #             file_path_image=output_folder_path + "/charts/" + "assoc_" + m + ".png",
-    #         )
-
-    #         plot_heatmap(
-    #             data=response[response["metric"] == m],
-    #             x_category_col_name="variable_1",
-    #             y_category_col_name="variable_2",
-    #             value_col_name="value",
-    #             title="Metric of " + m,
-    #             view_chart=view_plots,
-    #             save_chart=save_plots,
-    #             file_path_image=output_folder_path + "/charts/" + "assoc_" + m + ".png",
-    #         )
     return response

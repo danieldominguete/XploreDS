@@ -21,6 +21,7 @@ from xploreds.data_visualization.data_viz_plotly import (
     plot_violinplot,
     plot_scatter,
     plot_heatmap_simple,
+    plot_heatmap_from_melt,
     plot_histogram,
 )
 from xploreds.data_analysis.statistics import (
@@ -201,8 +202,10 @@ def descriptive_analysis(
     if view_plots or save_plots:
 
         if log:
-            log.info("Plotting descriptive analysis...")
+            log.subtitle("Plotting descriptive analysis...")
 
+        if log:
+            log.info("Plotting univariate statistics of numerical variables...")
         for stat in num_variables_analysis.columns:
             if stat != "variable_name":
                 plot_bar(
@@ -318,7 +321,7 @@ def trend_analysis(
     # ----------------------------------------------------------
     # simple analysis for raw datetime reference
     if log:
-        log.info("Trend analysis of raw datetime reference...")
+        log.subtitle("Trend analysis of original datetime reference...")
 
     # ----------------------------------------------------------
     # saving charts
@@ -349,7 +352,7 @@ def trend_analysis(
     if date_trunc_by is not None:
 
         if log:
-            log.info("Trend analysis of aggregated datetime reference...")
+            log.subtitle("Trend analysis of aggregated datetime reference...")
 
         # ----------------------------------------------------------
         # trunc by date for agregate date values
@@ -359,6 +362,9 @@ def trend_analysis(
         # ----------------------------------------------------------
         # visualization of all data and each date_trunc period
         # ----------------------------------------------------------
+        if log:
+            log.info("Plotting numerical trend analysis...")
+
         for var in numerical_variables:
 
             plot_boxplot(
@@ -378,6 +384,8 @@ def trend_analysis(
 
         # ----------------------------------------------------------
         # categorical trend charts
+        if log:
+            log.info("Plotting categorical trend analysis...")
         for var in categorical_variables:
 
             data_agg = (
@@ -455,6 +463,9 @@ def trend_analysis(
         # ----------------------------------------------------------
         # metrics of drift between all data and each date_trunc period
         # ----------------------------------------------------------
+        if log:
+            log.subtitle("Drift analysis")
+
         # numerical and categorical variable analysis
         variables = numerical_variables + categorical_variables
 
@@ -463,34 +474,71 @@ def trend_analysis(
             columns=variables,
         )
 
-        if len(variables) > 0:
+        if len(numerical_variables) > 0:
             for time in data[dt_agg_col].unique():
-                for var in variables:
-                    log.info(
-                        "Calculating drift scores at "
-                        + str(time)
-                        + " for "
-                        + str(var)
-                        + "..."
-                    )
+                for var in numerical_variables:
 
                     data_temp = data[data[dt_agg_col] == time]
 
-                    value = calculate_psi_score(
-                        expected_df=data,
-                        actual_df=data_temp,
+                    value, drift_detected = calculate_psi_score(
+                        reference_data=data,
+                        current_data=data_temp,
                         column_name=var,
+                        feature_type="num",
+                        threshold=0.2,
                     )
 
                     variables_psi_analysis[var].loc[time] = value
 
-                    log.info(
-                        "PSI: "
-                        + str(var)
-                        + " at "
-                        + str(time)
-                        + " = {:.4f}".format(value)
-                    )
+                    if drift_detected:
+                        log.warning(
+                            "PSI Drift detected: "
+                            + str(var)
+                            + " at "
+                            + str(time)
+                            + " = {:.4f}".format(value)
+                        )
+                    else:
+                        log.info(
+                            "PSI: "
+                            + str(var)
+                            + " at "
+                            + str(time)
+                            + " = {:.4f}".format(value)
+                        )
+
+            if len(categorical_variables) > 0:
+                for time in data[dt_agg_col].unique():
+                    for var in categorical_variables:
+
+                        data_temp = data[data[dt_agg_col] == time]
+
+                        value, drift_detected = calculate_psi_score(
+                            reference_data=data,
+                            current_data=data_temp,
+                            column_name=var,
+                            feature_type="cat",
+                            threshold=0.2,
+                        )
+
+                        variables_psi_analysis[var].loc[time] = value
+
+                        if drift_detected:
+                            log.warning(
+                                "PSI Drift detected: "
+                                + str(var)
+                                + " at "
+                                + str(time)
+                                + " = {:.4f}".format(value)
+                            )
+                        else:
+                            log.info(
+                                "PSI: "
+                                + str(var)
+                                + " at "
+                                + str(time)
+                                + " = {:.4f}".format(value)
+                            )
 
         # Drift only for aggregate datetime
         if log:
@@ -515,10 +563,10 @@ def trend_analysis(
     if save_analysis:
 
         if log:
-            log.info("Saving trend analysis...")
+            log.subtitle("Saving trend analysis...")
 
         full_path = (
-            output_folder_path + "/reports/" + prefix_label + "_trend_statistics.xlsx"
+            output_folder_path + "reports/" + prefix_label + "_trend_statistics.xlsx"
         )
 
         # verificando se a pasta existe caso contrario criar a pasta
@@ -557,16 +605,13 @@ def variables_association_analysis(
         data=data,
         numerical_variables=numerical_variables,
         categorical_variables=categorical_variables,
-        view_plots=view_plots,
-        save_plots=save_plots,
-        save_analysis=save_analysis,
-        output_folder_path=output_folder_path,
-        prefix_label=prefix_label,
         log=log,
     )
 
-    # numerical x numerical
-    log.subtitle("Numerical variables association metrics")
+    log.subtitle("Ploting variables association metrics")
+
+    # numerical x numerical plots
+    log.info("Numerical x numerical variables plot...")
     for n1 in numerical_variables:
         for n2 in numerical_variables:
 
@@ -615,7 +660,7 @@ def variables_association_analysis(
                 )
 
     # numerical x categorical
-    log.subtitle("Numerical and categorical variables association metrics")
+    log.info("Numerical x categorical variables plot...")
     for n1 in numerical_variables:
         for n2 in categorical_variables:
 
@@ -637,7 +682,7 @@ def variables_association_analysis(
                 )
 
     # categorical x categorical
-    log.subtitle("Categorical variables association metrics")
+    log.info("Categorical x categorical variables plot...")
     for n1 in categorical_variables:
         for n2 in categorical_variables:
 
@@ -665,7 +710,7 @@ def variables_association_analysis(
 
         full_path = (
             output_folder_path
-            + "/reports/"
+            + "reports/"
             + prefix_label
             + "association_variables.xlsx"
         )
@@ -675,7 +720,7 @@ def variables_association_analysis(
 
         # Multiple DataFrames to different sheets
         with pd.ExcelWriter(full_path) as writer:
-            metrics.to_excel(writer, sheet_name="association", index=False)
+            metrics.to_excel(writer, sheet_name="variables_association", index=False)
         if log:
             log.info("Variables association analysis saved in " + full_path)
 
@@ -683,21 +728,21 @@ def variables_association_analysis(
     if view_plots or save_plots:
 
         if log:
-            log.subtitle("Plotting variables association metrics")
+            log.subtitle("Plotting variables association resume by metrics")
 
         for m in metrics["metric"].unique():
-            plot_bar(
-                data=metrics[metrics["metric"] == m],
-                x_col_name="variable_1",
-                y_col_name="value",
-                color_col_name="variable_2",
-                title="Metric of " + m,
-                view_chart=view_plots,
-                save_chart=save_plots,
-                file_path_image=output_folder_path + "/charts/" + "assoc_" + m + ".png",
-            )
+            # plot_bar(
+            #     data=metrics[metrics["metric"] == m],
+            #     x_col_name="variable_1",
+            #     y_col_name="value",
+            #     color_col_name="variable_2",
+            #     title="Metric of " + m,
+            #     view_chart=view_plots,
+            #     save_chart=save_plots,
+            #     file_path_image=output_folder_path + "/charts/" + "assoc_" + m + ".png",
+            # )
 
-            plot_heatmap(
+            plot_heatmap_from_melt(
                 data=metrics[metrics["metric"] == m],
                 x_category_col_name="variable_1",
                 y_category_col_name="variable_2",
@@ -711,12 +756,9 @@ def variables_association_analysis(
 
 def numerical_target_association_analysis(
     data: pd,
-    date_col_name: str,
-    date_col_format: str = "%Y-%m-%d",
-    date_trunc_by: str = None,
     numerical_variables: list = None,
     categorical_variables: list = None,
-    target_col_name: str = None,
+    numerical_target_col_name: str = None,
     view_plots: bool = False,
     save_plots: bool = False,
     save_analysis: bool = False,
@@ -725,99 +767,254 @@ def numerical_target_association_analysis(
     log: object = None,
 ) -> None:
 
-    if log:
-        log.subtitle("Distribution for target")
-
-    # association metrics
-    if target_col_name not in numerical_variables:
-        numerical_variables.append(target_col_name)
-
-    metrics = get_association_statistics(
-        data=data,
-        numerical_variables=numerical_variables,
-        categorical_variables=categorical_variables,
-        view_plots=view_plots,
-        save_plots=save_plots,
-        save_analysis=save_analysis,
-        output_folder_path=output_folder_path,
-        prefix_label=prefix_label,
-        log=log,
-    )
-
-    # filtrando somente resultados com target
-    metrics = metrics[metrics["variable_2"] == target_col_name]
-    metrics = metrics[metrics["variable_1"] != target_col_name]
-
-    if view_plots or save_plots:
+    if numerical_target_col_name != None:
 
         if log:
-            log.info("Plotting covariables distribution for numerical target value...")
+            log.subtitle("Distribution for target")
 
-        for var in categorical_variables:
-            plot_boxplot(
-                data=data,
-                x_col_name=var,
-                y_col_name=target_col_name,
-                title="Distribution of " + str(var) + " with " + target_col_name,
-                with_points=True,
+        # association metrics
+        if numerical_target_col_name not in numerical_variables:
+            numerical_variables.append(numerical_target_col_name)
+
+        metrics = get_association_statistics(
+            data=data,
+            numerical_variables=numerical_variables,
+            categorical_variables=categorical_variables,
+            log=log,
+        )
+
+        # filtrando somente resultados com target
+        metrics = metrics[metrics["variable_2"] == numerical_target_col_name]
+        metrics = metrics[metrics["variable_1"] != numerical_target_col_name]
+
+        if view_plots or save_plots:
+
+            if log:
+                log.info(
+                    "Plotting covariables distribution for numerical target value..."
+                )
+
+            for var in categorical_variables:
+                plot_boxplot(
+                    data=data,
+                    x_col_name=var,
+                    y_col_name=numerical_target_col_name,
+                    title="Distribution of "
+                    + str(var)
+                    + " with "
+                    + numerical_target_col_name,
+                    with_points=True,
+                    view_chart=view_plots,
+                    save_chart=save_plots,
+                    file_path_image=output_folder_path
+                    + "/charts/"
+                    + "dist_numerical_"
+                    + var
+                    + "_"
+                    + numerical_target_col_name
+                    + ".png",
+                )
+
+                plot_violinplot(
+                    data=data,
+                    x_col_name=var,
+                    y_col_name=numerical_target_col_name,
+                    title="Distribution of "
+                    + str(var)
+                    + " with "
+                    + numerical_target_col_name,
+                    with_box=True,
+                    view_chart=view_plots,
+                    save_chart=save_plots,
+                    file_path_image=output_folder_path
+                    + "/charts/"
+                    + "dist_numerical_"
+                    + var
+                    + "_"
+                    + numerical_target_col_name
+                    + ".png",
+                )
+
+            for var in numerical_variables:
+                plot_scatter(
+                    data=data,
+                    x_col_name=var,
+                    y_col_name=numerical_target_col_name,
+                    title="Correlation of " + var + " and " + numerical_target_col_name,
+                    # text_annotation="Pearson:{:.2f} Spearman:{:.2f} Kendall:{:.2f}".format(
+                    #     pearson_metric, spearman_metric, kendall_metric
+                    # ),
+                    x_text_annotation=0.95,
+                    y_text_annotation=0.9,
+                    with_trendline=True,
+                    view_chart=view_plots,
+                    save_chart=save_plots,
+                    file_path_image=output_folder_path
+                    + "/charts/"
+                    + "corr_numerical_"
+                    + var
+                    + "_"
+                    + numerical_target_col_name
+                    + ".png",
+                )
+
+            plot_bar(
+                data=metrics,
+                x_col_name=metrics["value"],
+                y_col_name=metrics["variable_1"],
+                color_col_name=metrics["metric"],
+                facet_row_name=metrics["metric"],
+                title="Association with " + numerical_target_col_name,
+                orientation="h",
                 view_chart=view_plots,
                 save_chart=save_plots,
                 file_path_image=output_folder_path
                 + "/charts/"
-                + "dist_numerical_"
-                + var
-                + "_"
-                + target_col_name
+                + prefix_label
+                + "eda_ks_"
                 + ".png",
             )
 
-            plot_violinplot(
-                data=data,
-                x_col_name=var,
-                y_col_name=target_col_name,
-                title="Distribution of " + str(var) + " with " + target_col_name,
-                with_box=True,
-                view_chart=view_plots,
-                save_chart=save_plots,
-                file_path_image=output_folder_path
-                + "/charts/"
-                + "dist_numerical_"
-                + var
-                + "_"
-                + target_col_name
-                + ".png",
+        # saving statistics
+        if save_analysis:
+
+            if log:
+                log.subtitle("Saving numerical target association report")
+
+            full_path = (
+                output_folder_path
+                + "reports/"
+                + prefix_label
+                + "association_numerical_target.xlsx"
             )
 
-        for var in numerical_variables:
-            plot_scatter(
-                data=data,
-                x_col_name=var,
-                y_col_name=target_col_name,
-                title="Correlation of " + var + " and " + target_col_name,
-                # text_annotation="Pearson:{:.2f} Spearman:{:.2f} Kendall:{:.2f}".format(
-                #     pearson_metric, spearman_metric, kendall_metric
-                # ),
-                x_text_annotation=0.95,
-                y_text_annotation=0.9,
-                with_trendline=True,
-                view_chart=view_plots,
-                save_chart=save_plots,
-                file_path_image=output_folder_path
-                + "/charts/"
-                + "corr_numerical_"
-                + var
-                + "_"
-                + target_col_name
-                + ".png",
-            )
+            # verificando se a pasta existe caso contrario criar a pasta
+            create_folder(os.path.dirname(full_path))
 
+            # Multiple DataFrames to different sheets
+            with pd.ExcelWriter(full_path) as writer:
+                metrics.to_excel(writer, sheet_name="metrics", index=False)
+            if log:
+                log.info("Numerical target association analysis saved in " + full_path)
+    else:
+        if log:
+            log.warning("Numerical target variable not informed")
+
+
+def categorical_target_variable_association_analysis(
+    data: pd,
+    numerical_variables: list = None,
+    categorical_variables: list = None,
+    categorical_target_col_name: str = None,
+    view_plots: bool = False,
+    save_plots: bool = False,
+    save_analysis: bool = False,
+    output_folder_path: str = None,
+    prefix_label: str = None,
+    log: object = None,
+) -> None:
+
+    if categorical_target_col_name != None:
+
+        # association metrics
+        if categorical_target_col_name not in categorical_variables:
+            categorical_variables.append(categorical_target_col_name)
+
+        if log:
+            log.info("Calculating association metrics...")
+
+        metrics = get_association_statistics(
+            data=data,
+            numerical_variables=numerical_variables,
+            categorical_variables=categorical_variables,
+            log=log,
+        )
+
+        # excluindo variavel target para nao quebrar demais funcoes
+        categorical_variables.remove(categorical_target_col_name)
+
+        # filtrando somente resultados com target
+        metrics = metrics[metrics["variable_2"] == categorical_target_col_name]
+        metrics = metrics[metrics["variable_1"] != categorical_target_col_name]
+
+        if view_plots or save_plots:
+
+            if log:
+                log.subtitle(
+                    "Plotting covariables distribution for categorical target value..."
+                )
+
+            for var in categorical_variables:
+                plot_perc_bar(
+                    data=data,
+                    x_col_name=categorical_target_col_name,
+                    y_col_name=var,
+                    title="Distribution of "
+                    + str(var)
+                    + " with "
+                    + categorical_target_col_name,
+                    view_chart=view_plots,
+                    save_chart=save_plots,
+                    file_path_image=output_folder_path
+                    + "/charts/"
+                    + "dist_categorical_"
+                    + var
+                    + "_"
+                    + categorical_target_col_name
+                    + ".png",
+                )
+
+            for var in numerical_variables:
+                plot_boxplot(
+                    data=data,
+                    x_col_name=categorical_target_col_name,
+                    y_col_name=var,
+                    title="Distribution of "
+                    + str(var)
+                    + " with "
+                    + categorical_target_col_name,
+                    with_points=True,
+                    view_chart=view_plots,
+                    save_chart=save_plots,
+                    file_path_image=output_folder_path
+                    + "/charts/"
+                    + "dist_numerical_"
+                    + var
+                    + "_"
+                    + categorical_target_col_name
+                    + ".png",
+                )
+
+                plot_violinplot(
+                    data=data,
+                    x_col_name=categorical_target_col_name,
+                    y_col_name=var,
+                    title="Distribution of "
+                    + str(var)
+                    + " with "
+                    + categorical_target_col_name,
+                    with_box=True,
+                    view_chart=view_plots,
+                    save_chart=save_plots,
+                    file_path_image=output_folder_path
+                    + "/charts/"
+                    + "violin_numerical_"
+                    + var
+                    + "_"
+                    + categorical_target_col_name
+                    + ".png",
+                )
+
+        # association resume
+        if log:
+            log.subtitle("Ploting association metrics resume...")
         plot_bar(
             data=metrics,
             x_col_name=metrics["value"],
             y_col_name=metrics["variable_1"],
             color_col_name=metrics["metric"],
             facet_row_name=metrics["metric"],
-            title="Association with " + target_col_name,
+            title="Association with " + categorical_target_col_name,
             orientation="h",
             view_chart=view_plots,
             save_chart=save_plots,
@@ -828,223 +1025,108 @@ def numerical_target_association_analysis(
             + ".png",
         )
 
-
-def categorical_target_association_analysis(
-    data: pd,
-    date_col_name: str,
-    date_col_format: str = "%Y-%m-%d",
-    date_trunc_by: str = None,
-    numerical_variables: list = None,
-    categorical_variables: list = None,
-    target_col_name: str = None,
-    view_plots: bool = False,
-    save_plots: bool = False,
-    save_analysis: bool = False,
-    output_folder_path: str = None,
-    prefix_label: str = None,
-    log: object = None,
-) -> None:
-
-    # values distribution for each class
-    if log:
-        log.subtitle("Values distribution for each class")
-
-    # association metrics
-    if target_col_name not in categorical_variables:
-        categorical_variables.append(target_col_name)
-
-    metrics = get_association_statistics(
-        data=data,
-        numerical_variables=numerical_variables,
-        categorical_variables=categorical_variables,
-        view_plots=view_plots,
-        save_plots=save_plots,
-        save_analysis=save_analysis,
-        output_folder_path=output_folder_path,
-        prefix_label=prefix_label,
-        log=log,
-    )
-
-    # excluindo variavel target para nao quebrar demais funcoes
-    categorical_variables.remove(target_col_name)
-
-    # filtrando somente resultados com target
-    metrics = metrics[metrics["variable_2"] == target_col_name]
-    metrics = metrics[metrics["variable_1"] != target_col_name]
-
-    if view_plots or save_plots:
-
+        # information value (numerical + categorical)
         if log:
-            log.info(
-                "Plotting covariables distribution for categorical target value..."
-            )
+            log.subtitle("Information value for target association analysis")
+        df_iv, df_woe = get_information_value(
+            data=data,
+            y_true_numeric_column_name=categorical_target_col_name,
+            var_categorical_column_name=categorical_variables,
+            var_numeric_column_names=numerical_variables,
+            log=log,
+        )
 
-        for var in categorical_variables:
-            plot_perc_bar(
-                data=data,
-                x_col_name=target_col_name,
-                y_col_name=var,
-                title="Distribution of " + str(var) + " with " + target_col_name,
+        if view_plots or save_plots:
+
+            plot_bar(
+                data=df_iv,
+                y_col_name=df_iv["variable"],
+                x_col_name=df_iv["iv"],
+                text_col_name=df_iv["analysis"],
+                title="Information Value with " + categorical_target_col_name,
+                orientation="h",
                 view_chart=view_plots,
                 save_chart=save_plots,
                 file_path_image=output_folder_path
                 + "/charts/"
-                + "dist_categorical_"
-                + var
-                + "_"
-                + target_col_name
+                + prefix_label
+                + "eda_iv_"
                 + ".png",
             )
 
-        for var in numerical_variables:
-            plot_boxplot(
-                data=data,
-                x_col_name=target_col_name,
-                y_col_name=var,
-                title="Distribution of " + str(var) + " with " + target_col_name,
-                with_points=True,
+            plot_bar(
+                data=df_woe,
+                y_col_name=df_woe["variable_group_full"],
+                x_col_name=df_woe["woe"].abs(),
+                # color_col_name=df_woe["variable_group"],
+                barmode="stack",
+                orientation="h",
+                title="WoE with " + categorical_target_col_name,
                 view_chart=view_plots,
                 save_chart=save_plots,
                 file_path_image=output_folder_path
                 + "/charts/"
-                + "dist_numerical_"
-                + var
-                + "_"
-                + target_col_name
+                + prefix_label
+                + "eda_woe_"
                 + ".png",
             )
 
-            plot_violinplot(
-                data=data,
-                x_col_name=target_col_name,
-                y_col_name=var,
-                title="Distribution of " + str(var) + " with " + target_col_name,
-                with_box=True,
+        # ks score (numerical) - somente para target com duas classes
+        if log:
+            log.subtitle("KS value for target association analysis")
+
+        ks_vars = get_ks_score_from_numerical_covariables(
+            data=data,
+            y_true_column_name=categorical_target_col_name,
+            covariables_column_name_list=numerical_variables,
+            log=log,
+        )
+
+        if view_plots or save_plots:
+
+            if log:
+                log.info("Plotting KS for categorical target association analysis...")
+
+            plot_bar(
+                data=ks_vars,
+                y_col_name=ks_vars["variable"],
+                x_col_name=ks_vars["ks"],
+                title="KS with " + categorical_target_col_name,
+                orientation="h",
                 view_chart=view_plots,
                 save_chart=save_plots,
                 file_path_image=output_folder_path
                 + "/charts/"
-                + "violin_numerical_"
-                + var
-                + "_"
-                + target_col_name
+                + prefix_label
+                + "eda_ks_"
                 + ".png",
             )
 
-    # association resume
-    plot_bar(
-        data=metrics,
-        x_col_name=metrics["value"],
-        y_col_name=metrics["variable_1"],
-        color_col_name=metrics["metric"],
-        facet_row_name=metrics["metric"],
-        title="Association with " + target_col_name,
-        orientation="h",
-        view_chart=view_plots,
-        save_chart=save_plots,
-        file_path_image=output_folder_path
-        + "/charts/"
-        + prefix_label
-        + "eda_ks_"
-        + ".png",
-    )
+        # saving statistics
+        if save_analysis:
 
-    # information value (numerical + categorical)
-    if log:
-        log.subtitle("Information value for target association analysis")
-    df_iv, df_woe = get_information_value(
-        data=data,
-        y_true_numeric_column_name=target_col_name,
-        var_categorical_column_name=categorical_variables,
-        var_numeric_column_names=numerical_variables,
-        log=log,
-    )
+            if log:
+                log.subtitle("Saving categorical target association report")
 
-    if view_plots or save_plots:
+            full_path = (
+                output_folder_path
+                + "reports/"
+                + prefix_label
+                + "association_categorical_target.xlsx"
+            )
 
+            # verificando se a pasta existe caso contrario criar a pasta
+            create_folder(os.path.dirname(full_path))
+
+            # Multiple DataFrames to different sheets
+            with pd.ExcelWriter(full_path) as writer:
+                df_iv.to_excel(writer, sheet_name="information_value", index=False)
+                df_woe.to_excel(writer, sheet_name="woe", index=False)
+                ks_vars.to_excel(writer, sheet_name="ks", index=False)
+            if log:
+                log.info(
+                    "Categorical target association analysis saved in " + full_path
+                )
+    else:
         if log:
-            log.info("Plotting IF for categorical target association analysis...")
-
-        plot_bar(
-            data=df_iv,
-            y_col_name=df_iv["variable"],
-            x_col_name=df_iv["iv"],
-            text_col_name=df_iv["analysis"],
-            title="Information Value with " + target_col_name,
-            orientation="h",
-            view_chart=view_plots,
-            save_chart=save_plots,
-            file_path_image=output_folder_path
-            + "/charts/"
-            + prefix_label
-            + "eda_iv_"
-            + ".png",
-        )
-
-        plot_bar(
-            data=df_woe,
-            y_col_name=df_woe["variable_group_full"],
-            x_col_name=df_woe["woe"].abs(),
-            # color_col_name=df_woe["variable_group"],
-            barmode="stack",
-            orientation="h",
-            title="WoE with " + target_col_name,
-            view_chart=view_plots,
-            save_chart=save_plots,
-            file_path_image=output_folder_path
-            + "/charts/"
-            + prefix_label
-            + "eda_woe_"
-            + ".png",
-        )
-
-    # ks score (numerical)
-    if log:
-        log.subtitle("KS value for target association analysis")
-    ks_vars = get_ks_score_from_numerical_covariables(
-        data=data,
-        y_true_column_name=target_col_name,
-        covariables_column_name_list=numerical_variables,
-        log=log,
-    )
-
-    if view_plots or save_plots:
-
-        if log:
-            log.info("Plotting KS for categorical target association analysis...")
-
-        plot_bar(
-            data=ks_vars,
-            y_col_name=ks_vars["variable"],
-            x_col_name=ks_vars["ks"],
-            title="KS with " + target_col_name,
-            orientation="h",
-            view_chart=view_plots,
-            save_chart=save_plots,
-            file_path_image=output_folder_path
-            + "/charts/"
-            + prefix_label
-            + "eda_ks_"
-            + ".png",
-        )
-
-    # saving statistics
-    if save_analysis:
-
-        if log:
-            log.subtitle("Saving categorical target association report")
-
-        full_path = (
-            output_folder_path + "/reports/" + prefix_label + "association_target.xlsx"
-        )
-
-        # verificando se a pasta existe caso contrario criar a pasta
-        create_folder(os.path.dirname(full_path))
-
-        # Multiple DataFrames to different sheets
-        with pd.ExcelWriter(full_path) as writer:
-            df_iv.to_excel(writer, sheet_name="information_value", index=False)
-            df_woe.to_excel(writer, sheet_name="woe", index=False)
-            ks_vars.to_excel(writer, sheet_name="ks", index=False)
-        if log:
-            log.info("Categorical target association analysis saved in " + full_path)
+            log.warning("Categorical target variable not informed")

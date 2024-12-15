@@ -29,7 +29,10 @@ from xploreds.data_analysis.statistics import (
     get_ks_score_from_numerical_covariables,
     get_association_statistics,
 )
-from xploreds.data_analysis.drift import calculate_psi_score
+from xploreds.data_analysis.drift import (
+    calculate_psi_score,
+    calculate_anderson_darling_score,
+)
 
 
 def descriptive_analysis(
@@ -469,6 +472,7 @@ def trend_analysis(
         # numerical and categorical variable analysis
         variables = numerical_variables + categorical_variables
 
+        # PSI score
         variables_psi_analysis = pd.DataFrame(
             index=data[dt_agg_col].unique(),
             columns=variables,
@@ -558,6 +562,62 @@ def trend_analysis(
             + "_psi_drift_analysis.png",
         )
 
+        # Anderson Darling (somente numericas)
+        variables_anderson_analysis = pd.DataFrame(
+            index=data[dt_agg_col].unique(),
+            columns=numerical_variables,
+        )
+
+        if len(numerical_variables) > 0:
+            for time in data[dt_agg_col].unique():
+                for var in numerical_variables:
+
+                    data_temp = data[data[dt_agg_col] == time]
+
+                    value, drift_detected = calculate_anderson_darling_score(
+                        reference_data=data,
+                        current_data=data_temp,
+                        column_name=var,
+                    )
+
+                    variables_anderson_analysis[var].loc[time] = value
+
+                    if drift_detected:
+                        log.warning(
+                            "Anderson Drift detected: "
+                            + str(var)
+                            + " at "
+                            + str(time)
+                            + " = {:.4f}".format(value)
+                        )
+                    else:
+                        log.info(
+                            "Anderson: "
+                            + str(var)
+                            + " at "
+                            + str(time)
+                            + " = {:.4f}".format(value)
+                        )
+
+        # Drift only for aggregate datetime
+        if log:
+            log.info("Plotting Anderson drift analysis...")
+
+        variables_anderson_analysis = variables_anderson_analysis.reset_index(
+            names=[dt_agg_col]
+        )
+        plot_heatmap_simple(
+            data=variables_anderson_analysis,
+            x_ref_col_name=dt_agg_col,
+            y_values_col_list=numerical_variables,
+            title="Anderson drift analysis",
+            view_chart=view_plots,
+            save_chart=save_plots,
+            file_path_image=output_folder_path
+            + "/charts/"
+            + prefix_label
+            + "_anderson_drift_analysis.png",
+        )
     # ----------------------------------------------------------
     # saving statistics
     if save_analysis:

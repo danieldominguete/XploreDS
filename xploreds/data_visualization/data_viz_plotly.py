@@ -17,7 +17,11 @@ sys.path.append(str(project_folder))
 
 from xploreds.data_handler.file import create_folder
 from xploreds.data_analysis.statistics import get_binary_ks_curve
-from xploreds.data_analysis.statistics import get_ks_score_over_time
+from xploreds.data_analysis.statistics import (
+    get_ks_score_over_time,
+    get_pr_auc_score_over_time,
+    get_roc_auc_score_over_time,
+)
 
 
 def deploy_chart_in_navigator(fig: object) -> None:
@@ -691,7 +695,7 @@ def plot_histogram_binary_classes(
             fig.add_vline(x=cut_off, line_width=3, line_dash="dash", line_color="green")
 
     fig.update_layout(
-        xaxis_title="Threshold",
+        xaxis_title="Predicted Value",
         yaxis_title="Frequency",
         legend_title="Legend",
         title=title,
@@ -734,7 +738,7 @@ def plot_distribution_binary_classes(
             fig.add_vline(x=cut_off, line_width=3, line_dash="dash", line_color="green")
 
     fig.update_layout(
-        xaxis_title="Threshold",
+        xaxis_title="Predicted Value",
         yaxis_title="Frequency",
         legend_title="Legend",
         title=title,
@@ -756,43 +760,59 @@ def plot_ks_score_over_time(
     view_chart: bool = True,
     save_chart: bool = False,
     file_path_image: str = None,
+    log: object = None,
 ):
 
-    time_frame, ks_values, ks_ci_low_values, ks_ci_high_values = get_ks_score_over_time(
+    response = get_ks_score_over_time(
         data=data,
         y_true_column_name=y_true_column_name,
         y_probas_column_name=y_probas_column_name,
         time_column_name=date_column_name,
+        log=log,
     )
 
     fig = go.Figure()
 
+    # Add the new trace with n_samples on secondary y-axis
+    fig.add_trace(
+        go.Bar(
+            x=response["dt"],
+            y=response["n_samples"],  # your n_samples data
+            name="Number of Samples",
+            marker_color="lightgrey",
+            opacity=0.4,
+            yaxis="y2",  # This assigns the trace to the secondary y-axis
+        )
+    )
+
     fig.add_trace(
         go.Scatter(
-            x=time_frame,
-            y=ks_ci_low_values,
-            mode="lines",
+            x=response["dt"],
+            y=response["ci_low"],
+            mode="lines+markers",
             name="CI low",
             line=dict(color="lightblue", dash="dot"),
+            marker=dict(symbol="circle", size=4, color="lightblue"),
         )
     )
 
     fig.add_trace(
         go.Scatter(
-            x=time_frame,
-            y=ks_ci_high_values,
-            mode="lines",
+            x=response["dt"],
+            y=response["ci_high"],
+            mode="lines+markers",
             name="CI high",
-            fill="tonexty",
-            fillcolor="lightblue",
+            # fill="tonexty",
+            # fillcolor="lightblue",
             line=dict(color="lightblue", dash="dot"),
+            marker=dict(symbol="circle", size=4, color="lightblue"),
         )
     )
 
     fig.add_trace(
         go.Scatter(
-            x=time_frame,
-            y=ks_values,
+            x=response["dt"],
+            y=response["value"],
             mode="lines+markers",
             name="KS Statistics",
             line=dict(color="blue"),
@@ -802,10 +822,214 @@ def plot_ks_score_over_time(
 
     fig.update_layout(
         xaxis_title="Date",
-        yaxis_title="KS Statistic",
+        yaxis=dict(
+            title="KS Statistic",
+            range=[0, 1],
+            # titlefont=dict(color="blue"),
+            # tickfont=dict(color="blue"),
+        ),
+        yaxis2=dict(
+            title="Number of Samples",
+            overlaying="y",
+            side="right",
+            # titlefont=dict(color="gray"),
+            # tickfont=dict(color="gray"),
+        ),
         legend_title="Legend",
         title=title,
-        yaxis=dict(range=[0, 1]),
+        bargap=0.5,
+    )
+
+    if save_chart:
+        save_chart_file(fig, file_path_image)
+
+    if view_chart:
+        deploy_chart_in_navigator(fig)
+
+
+def plot_roc_auc_score_over_time(
+    data: pd,
+    y_true_column_name: str,
+    y_probas_column_name: str,
+    date_column_name: str,
+    title="ROC AUC Statistic over time",
+    view_chart: bool = True,
+    save_chart: bool = False,
+    file_path_image: str = None,
+    log: object = None,
+):
+
+    response = get_roc_auc_score_over_time(
+        data=data,
+        y_true_column_name=y_true_column_name,
+        y_probas_column_name=y_probas_column_name,
+        time_column_name=date_column_name,
+        log=log,
+    )
+
+    fig = go.Figure()
+
+    # Add the new trace with n_samples on secondary y-axis
+    fig.add_trace(
+        go.Bar(
+            x=response["dt"],
+            y=response["n_samples"],  # your n_samples data
+            name="Number of Samples",
+            marker_color="lightgrey",
+            opacity=0.4,
+            yaxis="y2",  # This assigns the trace to the secondary y-axis
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=response["dt"],
+            y=response["ci_low"],
+            mode="lines+markers",
+            name="CI low",
+            line=dict(color="lightblue", dash="dot"),
+            marker=dict(symbol="circle", size=4, color="lightblue"),
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=response["dt"],
+            y=response["ci_high"],
+            mode="lines+markers",
+            name="CI high",
+            # fill="tonexty",
+            # fillcolor="lightblue",
+            line=dict(color="lightblue", dash="dot"),
+            marker=dict(symbol="circle", size=4, color="lightblue"),
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=response["dt"],
+            y=response["value"],
+            mode="lines+markers",
+            name="PR-AUC Statistics",
+            line=dict(color="blue"),
+            marker=dict(symbol="circle", size=8, color="blue"),
+        )
+    )
+
+    fig.update_layout(
+        xaxis_title="Date",
+        yaxis=dict(
+            title="PR-AUC Statistic",
+            range=[0, 1],
+            # titlefont=dict(color="blue"),
+            # tickfont=dict(color="blue"),
+        ),
+        yaxis2=dict(
+            title="Number of Samples",
+            overlaying="y",
+            side="right",
+            # titlefont=dict(color="gray"),
+            # tickfont=dict(color="gray"),
+        ),
+        legend_title="Legend",
+        title=title,
+        bargap=0.5,
+    )
+
+    if save_chart:
+        save_chart_file(fig, file_path_image)
+
+    if view_chart:
+        deploy_chart_in_navigator(fig)
+
+
+def plot_pr_auc_score_over_time(
+    data: pd,
+    y_true_column_name: str,
+    y_probas_column_name: str,
+    date_column_name: str,
+    title="PR AUC Statistic over time",
+    view_chart: bool = True,
+    save_chart: bool = False,
+    file_path_image: str = None,
+    log: object = None,
+):
+
+    response = get_pr_auc_score_over_time(
+        data=data,
+        y_true_column_name=y_true_column_name,
+        y_probas_column_name=y_probas_column_name,
+        time_column_name=date_column_name,
+        log=log,
+    )
+
+    fig = go.Figure()
+
+    # Add the new trace with n_samples on secondary y-axis
+    fig.add_trace(
+        go.Bar(
+            x=response["dt"],
+            y=response["n_samples"],  # your n_samples data
+            name="Number of Samples",
+            marker_color="lightgrey",
+            opacity=0.4,
+            yaxis="y2",  # This assigns the trace to the secondary y-axis
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=response["dt"],
+            y=response["ci_low"],
+            mode="lines+markers",
+            name="CI low",
+            line=dict(color="lightblue", dash="dot"),
+            marker=dict(symbol="circle", size=4, color="lightblue"),
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=response["dt"],
+            y=response["ci_high"],
+            mode="lines+markers",
+            name="CI high",
+            # fill="tonexty",
+            # fillcolor="lightblue",
+            line=dict(color="lightblue", dash="dot"),
+            marker=dict(symbol="circle", size=4, color="lightblue"),
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=response["dt"],
+            y=response["value"],
+            mode="lines+markers",
+            name="PR-AUC Statistics",
+            line=dict(color="blue"),
+            marker=dict(symbol="circle", size=8, color="blue"),
+        )
+    )
+
+    fig.update_layout(
+        xaxis_title="Date",
+        yaxis=dict(
+            title="PR-AUC Statistic",
+            range=[0, 1],
+            # titlefont=dict(color="blue"),
+            # tickfont=dict(color="blue"),
+        ),
+        yaxis2=dict(
+            title="Number of Samples",
+            overlaying="y",
+            side="right",
+            # titlefont=dict(color="gray"),
+            # tickfont=dict(color="gray"),
+        ),
+        legend_title="Legend",
+        title=title,
+        bargap=0.5,
     )
 
     if save_chart:

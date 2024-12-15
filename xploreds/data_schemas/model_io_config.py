@@ -4,6 +4,7 @@ Xplore DS :: Configuration data structure
 
 from pydantic import BaseModel
 from enum import Enum
+from xploreds.data_schemas.pre_processing_config import ScalingMethod, EncodingMethod
 
 
 class ApplicationType(str, Enum):
@@ -13,19 +14,6 @@ class ApplicationType(str, Enum):
     scoring_classification = "scoring_classification"
     binary_classification = "binary_classification"
     multiclass_classification = "multiclass_classification"
-
-
-class ScalingMethod(str, Enum):
-
-    none_scaler = "none_scaler"
-    min_max_scaler = "min_max_scaler"
-    mean_std_scaler = "mean_std_scaler"
-
-
-class EncodingMethod(str, Enum):
-
-    none_encoder = "none_encoding"
-    one_hot_encoder = "one_hot_encoder"
 
 
 class VariableConfig(BaseModel):

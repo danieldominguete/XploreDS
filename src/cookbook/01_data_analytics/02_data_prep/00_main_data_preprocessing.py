@@ -22,8 +22,24 @@ from xploreds.data_handler.file import (
 )
 from xploreds.data_handler.dataframe import (
     rename_columns,
-    normalize_not_valid_values,
 )
+from xploreds.data_handler.missing import (
+    replace_missing_values_by_default_value,
+    normalize_not_valid_values,
+    replace_missing_values_by_statistics_value,
+)
+from xploreds.data_handler.outliers import (
+    remove_unidimensional_outliers_by_zscore,
+    remove_multidimensional_outliers_by_elliptic_envelope,
+    remove_unidimensional_outliers_by_iqr,
+    remove_unidimensional_outliers_by_winsorizing,
+    remove_multidimensional_outliers_by_isolation_forest,
+    replace_unidimensional_outliers_by_winsorizing,
+)
+from xploreds.variables.variables_scaling import (
+    scaler_variable_fit_transform,
+)
+from xploreds.data_schemas.pre_processing_config import ScalingMethod
 
 # ==================================================================================
 # Setup do script
@@ -73,6 +89,63 @@ data = rename_columns(data=data, columns_to_rename=columns_to_rename, log=log)
 
 # Normalizar not valid values
 data = normalize_not_valid_values(data=data, log=log)
+
+# Tratando missing values
+data = replace_missing_values_by_default_value(
+    data=data, column_names=["duration", "age"], replacement_value=0, log=log
+)
+
+data = replace_missing_values_by_statistics_value(
+    data=data, column_names=["duration", "age"], replacement_value="median", log=log
+)
+
+# Tratando outliers unidimensionais
+data = remove_unidimensional_outliers_by_zscore(
+    data=data, column_names=["duration", "age"], zscore_threshold=3, log=log
+)
+
+data = remove_unidimensional_outliers_by_iqr(
+    data=data, column_names=["duration", "age"], iqr_threshold=1.5, log=log
+)
+
+data = remove_unidimensional_outliers_by_winsorizing(
+    data=data,
+    column_names=["duration", "age"],
+    max_percentile_threshold=0.99,
+    min_percentile_threshold=0.01,
+    log=log,
+)
+
+data = replace_unidimensional_outliers_by_winsorizing(
+    data=data,
+    column_names=["duration", "age"],
+    max_percentile_threshold=0.99,
+    min_percentile_threshold=0.01,
+    log=log,
+)
+
+# Tratando outliers multidimensionais
+data = remove_multidimensional_outliers_by_elliptic_envelope(
+    data=data,
+    column_names=["duration", "age"],
+    contamination=0.1,
+    log=log,
+)
+
+data = remove_multidimensional_outliers_by_isolation_forest(
+    data=data,
+    column_names=["duration", "age"],
+    contamination=0.1,
+    log=log,
+)
+
+# Normalizando valores de colunas
+data, _ = scaler_variable_fit_transform(
+    data=data,
+    variable_column_name="duration",
+    scale_method=ScalingMethod.mean_std_scaler,
+    log=log,
+)
 
 
 # ==================================================================================

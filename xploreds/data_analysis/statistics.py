@@ -97,10 +97,12 @@ def get_ks_score_for_binary_classifier(y_numerical_true, y_numerical_score_pred)
 
 
 def get_ks_score_confidence_interval_for_binary_classifier(
-    y_numerical_true, y_numerical_score_pred
+    y_numerical_true, y_numerical_score_pred, log
 ):
     ci_low, ci_high = get_ks_statistics_interval_confidence(
-        y_numerical_true, y_numerical_score_pred
+        y_numerical_true=y_numerical_true,
+        y_numerical_score_pred=y_numerical_score_pred,
+        log=log,
     )
     return ci_low, ci_high
 
@@ -108,6 +110,7 @@ def get_ks_score_confidence_interval_for_binary_classifier(
 def get_precision_recall_score_for_binary_classifier(
     y_numerical_true, y_numerical_score_pred
 ):
+
     precision, recall, _ = precision_recall_curve(
         y_numerical_true, y_numerical_score_pred
     )
@@ -206,11 +209,9 @@ def get_binary_ks_curve(data: pd, y_true_column_name: str, y_probas_column_name:
     return thresholds, pct1, pct2, ks_statistic, max_distance_at, lb.classes_
 
 
-def get_ks_statistics_interval_confidence(y_numerical_true, y_numerical_score_pred):
-
-    # print(len(y_numerical_score_pred[y_numerical_true == 0]))
-    # print(len(y_numerical_score_pred[y_numerical_true == 1]))
-    # print(len(np.unique(y_numerical_true)))
+def get_ks_statistics_interval_confidence(
+    y_numerical_true, y_numerical_score_pred, log
+):
 
     if (len(y_numerical_score_pred[y_numerical_true == 0])) > 2 and (
         (len(y_numerical_score_pred[y_numerical_true == 1]) > 2)
@@ -229,9 +230,112 @@ def get_ks_statistics_interval_confidence(y_numerical_true, y_numerical_score_pr
             random_state=42,
         )
 
-        return res.confidence_interval.low[0], res.confidence_interval.high[0]
+        if (np.isnan(res.confidence_interval.low[0])) or (
+            np.isnan(res.confidence_interval.high[0])
+        ):
+            return None, None
+        else:
+            return res.confidence_interval.low[0], res.confidence_interval.high[0]
     else:
+        if log:
+            log.warning(
+                "KS confidence interval not calculated due to insufficient data"
+            )
         return None, None
+
+
+def get_roc_auc_statistics_interval_confidence(
+    y_numerical_true, y_numerical_score_pred, log=None
+):
+
+    n_bootstraps = 1000
+
+    # First, ensure inputs are numpy arrays and same length
+    y_true = np.asarray(y_numerical_true)
+    y_pred_score = np.asarray(y_numerical_score_pred)
+
+    # Create indices for bootstrapping
+    n_samples = len(y_true)
+    bootstrapped_scores = []
+
+    rng = np.random.RandomState(42)  # for reproducibility
+
+    for i in range(n_bootstraps):
+        # Generate indices for this bootstrap sample
+        # Important: use the same indices for both arrays
+        indices = rng.randint(0, n_samples, size=n_samples)
+
+        # Sample both arrays using the same indices
+        sample_true = y_true[indices]
+        sample_pred = y_pred_score[indices]
+
+        # Only calculate score if we have both classes represented
+        if len(np.unique(sample_true)) < 2:
+            continue
+
+        # Calculate AUC of ROC curve
+        roc_auc = roc_auc_score(y_true=sample_true, y_score=sample_pred)
+
+        bootstrapped_scores.append(roc_auc)
+
+    # Calculate confidence intervals
+    sorted_scores = np.array(bootstrapped_scores)
+    sorted_scores.sort()
+
+    # Return the confidence intervals
+    confidence_lower = sorted_scores[int(0.025 * len(sorted_scores))]
+    confidence_upper = sorted_scores[int(0.975 * len(sorted_scores))]
+    mean_score = np.mean(sorted_scores)
+
+    return confidence_lower, confidence_upper, mean_score
+
+
+def get_pr_auc_statistics_interval_confidence(
+    y_numerical_true, y_numerical_score_pred, log=None
+):
+
+    n_bootstraps = 1000
+
+    # First, ensure inputs are numpy arrays and same length
+    y_true = np.asarray(y_numerical_true)
+    y_pred_score = np.asarray(y_numerical_score_pred)
+
+    # Create indices for bootstrapping
+    n_samples = len(y_true)
+    bootstrapped_scores = []
+
+    rng = np.random.RandomState(42)  # for reproducibility
+
+    for i in range(n_bootstraps):
+        # Generate indices for this bootstrap sample
+        # Important: use the same indices for both arrays
+        indices = rng.randint(0, n_samples, size=n_samples)
+
+        # Sample both arrays using the same indices
+        sample_true = y_true[indices]
+        sample_pred = y_pred_score[indices]
+
+        # Only calculate score if we have both classes represented
+        if len(np.unique(sample_true)) < 2:
+            continue
+
+        # Calculate precision-recall curve
+        precision, recall, _ = precision_recall_curve(sample_true, sample_pred)
+
+        # Calculate AUC of PR curve
+        pr_auc = auc(recall, precision)
+        bootstrapped_scores.append(pr_auc)
+
+    # Calculate confidence intervals
+    sorted_scores = np.array(bootstrapped_scores)
+    sorted_scores.sort()
+
+    # Return the confidence intervals
+    confidence_lower = sorted_scores[int(0.025 * len(sorted_scores))]
+    confidence_upper = sorted_scores[int(0.975 * len(sorted_scores))]
+    mean_score = np.mean(sorted_scores)
+
+    return confidence_lower, confidence_upper, mean_score
 
 
 def get_ks_score_over_time(
@@ -245,27 +349,271 @@ def get_ks_score_over_time(
     time_frame = list(data[time_column_name].unique())
     time_frame.sort()
 
-    ks_values = []
-    ks_ci_low_values = []
-    ks_ci_high_values = []
+    dt_values = []
+    values = []
+    ci_low_values = []
+    ci_high_values = []
+    n_samples = []
 
     for t in time_frame:
 
         data_temp = data[data[time_column_name] == t]
-        ks_value = get_ks_score_for_binary_classifier(
-            y_numerical_true=data_temp[y_true_column_name],
-            y_numerical_score_pred=data_temp[y_probas_column_name],
-        )
-        ks_ci_low, ks_ci_high = get_ks_statistics_interval_confidence(
-            y_numerical_true=data_temp[y_true_column_name],
-            y_numerical_score_pred=data_temp[y_probas_column_name],
-        )
 
-        ks_values.append(ks_value)
-        ks_ci_low_values.append(ks_ci_low)
-        ks_ci_high_values.append(ks_ci_high)
+        n_class = len(np.unique(data_temp[y_true_column_name]))
+        if n_class != 2:
+            if log:
+                if log:
+                    log.warning(
+                        "KS: {} = KS confidence interval not calculated due to insuficient data".format(
+                            t
+                        )
+                    )
 
-    return time_frame, ks_values, ks_ci_low_values, ks_ci_high_values
+            dt_values.append(t)
+            values.append(None)
+            ci_low_values.append(None)
+            ci_high_values.append(None)
+            n_samples.append(len(data_temp))
+
+        else:
+            value = get_ks_score_for_binary_classifier(
+                y_numerical_true=data_temp[y_true_column_name],
+                y_numerical_score_pred=data_temp[y_probas_column_name],
+            )
+            ci_low, ci_high = get_ks_statistics_interval_confidence(
+                y_numerical_true=data_temp[y_true_column_name],
+                y_numerical_score_pred=data_temp[y_probas_column_name],
+                log=None,
+            )
+
+            if ci_low is None or ci_high is None:
+                if log:
+                    log.warning(
+                        "KS: {} = KS confidence interval not calculated due to insuficient data".format(
+                            t
+                        )
+                    )
+
+                dt_values.append(t)
+                values.append(None)
+                ci_low_values.append(None)
+                ci_high_values.append(None)
+                n_samples.append(len(data_temp))
+
+            else:
+                if log:
+                    log.info(
+                        "KS: {} = {:.4f} [{:.4f} - {:.4f}]".format(
+                            t, value, ci_low, ci_high
+                        )
+                    )
+                ci_low_values.append(ci_low)
+                ci_high_values.append(ci_high)
+                dt_values.append(t)
+                values.append(value)
+                n_samples.append(len(data_temp))
+
+    response = pd.DataFrame(
+        {
+            "dt": dt_values,
+            "value": values,
+            "ci_low": ci_low_values,
+            "ci_high": ci_high_values,
+            "n_samples": n_samples,
+        }
+    )
+
+    response.dropna(inplace=True)
+    response.sort_values(by="dt", ascending=True, inplace=True)
+    response.reset_index(drop=True, inplace=True)
+
+    return response
+
+
+def get_roc_auc_score_over_time(
+    data: pd,
+    y_true_column_name: str,
+    y_probas_column_name: str,
+    time_column_name: str,
+    log: object = None,
+):
+
+    time_frame = list(data[time_column_name].unique())
+    time_frame.sort()
+
+    dt_values = []
+    stat_values = []
+    ci_low_values = []
+    ci_high_values = []
+    n_samples = []
+
+    for t in time_frame:
+
+        data_temp = data[data[time_column_name] == t]
+
+        n_class = len(np.unique(data_temp[y_true_column_name]))
+        if n_class != 2:
+            if log:
+                if log:
+                    log.warning(
+                        "ROC-AUC: {} = ROC-AUC confidence interval not calculated due to insuficient data".format(
+                            t
+                        )
+                    )
+
+            dt_values.append(t)
+            stat_values.append(None)
+            ci_low_values.append(None)
+            ci_high_values.append(None)
+            n_samples.append(len(data_temp))
+
+        else:
+            # value = get_precision_recall_score_for_binary_classifier(
+            #     y_numerical_true=data_temp[y_true_column_name],
+            #     y_numerical_score_pred=data_temp[y_probas_column_name],
+            # )
+
+            ci_low, ci_high, value = get_roc_auc_statistics_interval_confidence(
+                y_numerical_true=data_temp[y_true_column_name],
+                y_numerical_score_pred=data_temp[y_probas_column_name],
+                log=None,
+            )
+
+            if ci_low is None or ci_high is None:
+                if log:
+                    log.warning(
+                        "ROC-AUC: {} = ROC-AUC confidence interval not calculated due to insuficient data".format(
+                            t
+                        )
+                    )
+
+                dt_values.append(t)
+                stat_values.append(None)
+                ci_low_values.append(None)
+                ci_high_values.append(None)
+                n_samples.append(len(data_temp))
+
+            else:
+                if log:
+                    log.info(
+                        "ROC-AUC: {} = {:.4f} [{:.4f} - {:.4f}]".format(
+                            t, value, ci_low, ci_high
+                        )
+                    )
+                ci_low_values.append(ci_low)
+                ci_high_values.append(ci_high)
+                dt_values.append(t)
+                stat_values.append(value)
+                n_samples.append(len(data_temp))
+
+    response = pd.DataFrame(
+        {
+            "dt": dt_values,
+            "value": stat_values,
+            "ci_low": ci_low_values,
+            "ci_high": ci_high_values,
+            "n_samples": n_samples,
+        }
+    )
+
+    response.dropna(inplace=True)
+    response.sort_values(by="dt", ascending=True, inplace=True)
+    response.reset_index(drop=True, inplace=True)
+
+    return response
+
+
+def get_pr_auc_score_over_time(
+    data: pd,
+    y_true_column_name: str,
+    y_probas_column_name: str,
+    time_column_name: str,
+    log: object = None,
+):
+
+    time_frame = list(data[time_column_name].unique())
+    time_frame.sort()
+
+    dt_values = []
+    stat_values = []
+    ci_low_values = []
+    ci_high_values = []
+    n_samples = []
+
+    for t in time_frame:
+
+        data_temp = data[data[time_column_name] == t]
+
+        n_class = len(np.unique(data_temp[y_true_column_name]))
+        if n_class != 2:
+            if log:
+                if log:
+                    log.warning(
+                        "PR-AUC: {} = PR-AUC confidence interval not calculated due to insuficient data".format(
+                            t
+                        )
+                    )
+
+            dt_values.append(t)
+            stat_values.append(None)
+            ci_low_values.append(None)
+            ci_high_values.append(None)
+            n_samples.append(len(data_temp))
+
+        else:
+            # value = get_precision_recall_score_for_binary_classifier(
+            #     y_numerical_true=data_temp[y_true_column_name],
+            #     y_numerical_score_pred=data_temp[y_probas_column_name],
+            # )
+
+            ci_low, ci_high, value = get_pr_auc_statistics_interval_confidence(
+                y_numerical_true=data_temp[y_true_column_name],
+                y_numerical_score_pred=data_temp[y_probas_column_name],
+                log=None,
+            )
+
+            if ci_low is None or ci_high is None:
+                if log:
+                    log.warning(
+                        "PR-AUC: {} = PR-AUC confidence interval not calculated due to insuficient data".format(
+                            t
+                        )
+                    )
+
+                dt_values.append(t)
+                stat_values.append(None)
+                ci_low_values.append(None)
+                ci_high_values.append(None)
+                n_samples.append(len(data_temp))
+
+            else:
+                if log:
+                    log.info(
+                        "PR-AUC: {} = {:.4f} [{:.4f} - {:.4f}]".format(
+                            t, value, ci_low, ci_high
+                        )
+                    )
+                ci_low_values.append(ci_low)
+                ci_high_values.append(ci_high)
+                dt_values.append(t)
+                stat_values.append(value)
+                n_samples.append(len(data_temp))
+
+    response = pd.DataFrame(
+        {
+            "dt": dt_values,
+            "value": stat_values,
+            "ci_low": ci_low_values,
+            "ci_high": ci_high_values,
+            "n_samples": n_samples,
+        }
+    )
+
+    response.dropna(inplace=True)
+    response.sort_values(by="dt", ascending=True, inplace=True)
+    response.reset_index(drop=True, inplace=True)
+
+    return response
 
 
 def get_ks_score_from_numerical_covariables(

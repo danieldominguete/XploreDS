@@ -56,7 +56,7 @@ categorical_target_variable = "class_bad"
 numerical_target_variable = "age"
 
 # EDA univariada descritiva geral
-exec_descritive_analysis = True
+exec_descritive_analysis = False
 
 # EDA univariada tendencias temporais
 exec_trend_analysis = True
@@ -64,8 +64,8 @@ trend_analysis_date_ref = "transaction_date"
 trend_analysis_date_trunc = "M"
 
 # EDA multivariada associacoes (correlacoes)
-exec_target_association_analysis = True
-exec_covariables_association_analysis = True
+exec_target_association_analysis = False
+exec_covariables_association_analysis = False
 
 # Output results
 view_plots = True

@@ -44,6 +44,8 @@ def scaler_variable_fit(
         return scaler
 
     try:
+        if log:
+            log.info(f"Fitting scaler {scale_method} of {variable_column_name} ...")
         scaler.fit(data[variable_column_name].values.reshape(-1, 1))
         return scaler
     except Exception as e:
@@ -110,9 +112,6 @@ def scaler_variable_fit_transform(
         - Transformed DataFrame with new scaled column
         - Name of the scaled column
     """
-
-    if log:
-        log.info(f"Scaling variable {variable_column_name} with {scale_method}...")
 
     scaler = scaler_variable_fit(
         data=data,

@@ -2,6 +2,9 @@
 
 ## Evidently AI
 
+Todos os testes de drift: 
+https://docs.evidentlyai.com/user-guide/customization/options-for-statistical-tests
+
 For small data with <= 1000 observations in the reference dataset:
 
     For numerical columns (n_unique > 5): two-sample Kolmogorov-Smirnov test.

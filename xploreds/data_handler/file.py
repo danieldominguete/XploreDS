@@ -381,10 +381,16 @@ def load_dataframe_from_parquet(file_path: str, log: object = None) -> pd:
         pandas.DataFrame: The DataFrame loaded from the Parquet file.
 
     """
-    if log:
-        log.info("Loading dataframe from parquet file: " + file_path)
 
-    return pd.read_parquet(file_path)
+    data = pd.read_parquet(file_path)
+
+    if log:
+        log.info("Dataframe loaded from parquet file: " + file_path)
+        log.info("Total samples: " + str(data.shape[0]))
+        log.info("Number of variables: " + str(data.shape[1]))
+        log.info("Variables list: " + str(data.columns.values.tolist()))
+
+    return data
 
 
 def save_dataframe_to_excel(

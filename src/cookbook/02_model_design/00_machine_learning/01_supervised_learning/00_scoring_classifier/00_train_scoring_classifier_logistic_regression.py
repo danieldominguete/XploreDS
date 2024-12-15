@@ -11,7 +11,7 @@ import numpy as np
 
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib em projeto local
 # Futuramente substituir pois a lib estará já instalada no .venv
-project_folder = Path(__file__).resolve().parents[7]
+project_folder = Path(__file__).resolve().parents[6]
 sys.path.append(str(project_folder))
 
 # Importando biblioteca Xplore DS
@@ -285,7 +285,7 @@ model = XLogisticRegression(
 # ----------------------------------------------------------------------------------
 # Realizando do tunning do modelo
 
-log.title("Training model")
+log.title("Tunning model")
 
 model.fit(data=data_train)
 

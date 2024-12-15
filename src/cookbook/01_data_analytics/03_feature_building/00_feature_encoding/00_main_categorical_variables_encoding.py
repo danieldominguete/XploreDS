@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib
-project_folder = Path(__file__).resolve().parents[6]
+project_folder = Path(__file__).resolve().parents[5]
 sys.path.append(str(project_folder))
 
 # Importando biblioteca Xplore DS

@@ -2,8 +2,30 @@
 Xplore DS :: Drift Data Analysis
 """
 
-from evidently.calculations.stattests import psi_stat_test
+from evidently.calculations.stattests import psi_stat_test, anderson_darling_test
 import pandas as pd
+
+
+def calculate_anderson_darling_score(
+    reference_data: pd.DataFrame,
+    current_data: pd.DataFrame,
+    column_name: str,
+    feature_type: str = "num",  # "num", "cat", "text", "datetime", "date", "id", "unknown"
+    threshold: float = 0.05,  # p-value threshold for drift detection
+):
+
+    # Extract columns
+    reference_data = reference_data[column_name]
+    current_data = current_data[column_name]
+
+    result = anderson_darling_test(
+        reference_data=reference_data,
+        current_data=current_data,
+        feature_type=feature_type,
+        threshold=threshold,
+    )
+
+    return result.drift_score, bool(result.drifted)
 
 
 def calculate_psi_score(

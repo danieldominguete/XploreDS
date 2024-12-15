@@ -61,40 +61,6 @@ def rename_columns(data: pd, columns_to_rename: dict, log=None) -> pd:
     return data
 
 
-def normalize_not_valid_values(
-    data: pd, not_valid_values: list = ["na", "N/A"], log=None
-) -> pd:
-    """
-    Normalizes not valid values in a pandas DataFrame by replacing them with None.
-
-    Parameters
-    ----------
-    data : pandas.DataFrame
-        The DataFrame to be normalized.
-
-    log : Optional[Logger]
-        A logger object to output the information. If None, no logging is performed.
-        Default is None.
-
-    Returns
-    -------
-    pandas.DataFrame
-        The DataFrame with normalized not valid values.
-
-    Raises
-    ------
-    ValueError
-        If the DataFrame is empty.
-    """
-    if log is not None:
-        log.info("Normalizing not valid values...")
-
-    if data.empty:
-        raise ValueError("DataFrame is empty.")
-
-    return data.replace(not_valid_values, None)
-
-
 def create_unique_id(data: pd, id_column_name: str = "id", log=None) -> pd:
     """
     Creates a unique identifier column for a pandas DataFrame.

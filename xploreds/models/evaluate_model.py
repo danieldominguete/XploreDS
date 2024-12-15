@@ -22,6 +22,8 @@ from xploreds.data_visualization.data_viz_plotly import (
     plot_histogram_binary_classes,
     plot_distribution_binary_classes,
     plot_ks_score_over_time,
+    plot_pr_auc_score_over_time,
+    plot_roc_auc_score_over_time,
 )
 from xploreds.data_handler.file import save_dictionary_to_json
 from xploreds.data_analysis.statistics import (
@@ -41,8 +43,10 @@ from xploreds.data_analysis.statistics import (
     get_mean_absolute_error,
     get_mse_error_score,
     get_precision_recall_score_for_binary_classifier,
+    get_pr_auc_statistics_interval_confidence,
     get_r2_score,
     get_roc_auc_score_for_binary_classifier,
+    get_roc_auc_statistics_interval_confidence,
     precision_recall_curve,
     roc_curve,
 )
@@ -112,6 +116,7 @@ def get_common_evaluation_binary_classification_metrics(
 
     metrics = {}
 
+    # mean absolute error
     v = get_mean_absolute_error(
         y_numerical_true=data[y_target_numerical_col_name],
         y_numerical_pred=data[y_predict_numerical_col_name],
@@ -134,6 +139,7 @@ def get_common_evaluation_binary_classification_metrics(
     log.info("Mean Squared Error: {a:.3f}".format(a=v))
     metrics["Mean Squared Error"] = v
 
+    # MSE
     if y_no_skill_predict_numerical_col_name:
         v = get_mse_error_score(
             y_numerical_true=data[y_target_numerical_col_name],
@@ -142,6 +148,7 @@ def get_common_evaluation_binary_classification_metrics(
         log.info("Mean Squared Error (No Skill): {a:.3f}".format(a=v))
         metrics["Mean Absolute Error (No Skill)"] = v
 
+    # ROC AUC
     v = get_roc_auc_score_for_binary_classifier(
         y_numerical_true=data[y_target_numerical_col_name],
         y_numerical_score_pred=data[y_predict_numerical_col_name],
@@ -157,6 +164,17 @@ def get_common_evaluation_binary_classification_metrics(
         log.info("ROC AUC Score (No Skill): {a:.3f}".format(a=v))
         metrics["ROC AUC Score (No Skill)"] = v
 
+    c_lower, c_upper, v = get_roc_auc_statistics_interval_confidence(
+        y_numerical_true=data[y_target_numerical_col_name],
+        y_numerical_score_pred=data[y_predict_numerical_col_name],
+    )
+    log.info(
+        "ROC AUC Score Confidence Interval: {a:.3f} [{b:.3f} , {c:.3f}]".format(
+            a=v, b=c_lower, c=c_upper
+        )
+    )
+
+    # PRECISION RECALL
     v = get_precision_recall_score_for_binary_classifier(
         y_numerical_true=data[y_target_numerical_col_name],
         y_numerical_score_pred=data[y_predict_numerical_col_name],
@@ -172,6 +190,18 @@ def get_common_evaluation_binary_classification_metrics(
         log.info("Precision Recall AUC Score (No Skill): {a:.3f}".format(a=v))
         metrics["Precision Recall AUC Score (No Skill)"] = v
 
+    # intervalo de confianaca
+    c_lower, c_upper, v = get_pr_auc_statistics_interval_confidence(
+        y_numerical_true=data[y_target_numerical_col_name],
+        y_numerical_score_pred=data[y_predict_numerical_col_name],
+    )
+    log.info(
+        "PR AUC Score Confidence Interval: {a:.3f} [{b:.3f} , {c:.3f}]".format(
+            a=v, b=c_lower, c=c_upper
+        )
+    )
+
+    # GINI
     v = get_gini_score_for_binary_classifier(
         y_numerical_true=data[y_target_numerical_col_name],
         y_numerical_score_pred=data[y_predict_numerical_col_name],
@@ -187,6 +217,7 @@ def get_common_evaluation_binary_classification_metrics(
         log.info("Gini Score (No Skill): {a:.3f}".format(a=v))
         metrics["Gini Score (No Skill)"] = v
 
+    # KS SCORE
     v = get_ks_score_for_binary_classifier(
         y_numerical_true=data[y_target_numerical_col_name],
         y_numerical_score_pred=data[y_predict_numerical_col_name],
@@ -205,10 +236,16 @@ def get_common_evaluation_binary_classification_metrics(
     ci_low, ci_high = get_ks_score_confidence_interval_for_binary_classifier(
         y_numerical_true=data[y_target_numerical_col_name],
         y_numerical_score_pred=data[y_predict_numerical_col_name],
+        log=log,
     )
-    log.info(
-        "KS Score Confidence Interval: [{a:.3f} , {b:.3f}]".format(a=ci_low, b=ci_high)
-    )
+
+    if (ci_low is not None) and (ci_high is not None):
+        log.info(
+            "KS Score Confidence Interval: [{a:.3f} , {b:.3f}]".format(
+                a=ci_low, b=ci_high
+            )
+        )
+        metrics["KS Score Confidence Interval"] = [ci_low, ci_high]
 
     return metrics
 
@@ -332,6 +369,7 @@ def plot_common_evaluation_binary_classification_results(
     data,
     y_target_numerical_col_name,
     y_predict_numerical_col_name,
+    date_reference_col_name,
     results_folder,
     dataset_identification,
     y_no_skill_predict_numerical_col_name: str = None,
@@ -340,7 +378,7 @@ def plot_common_evaluation_binary_classification_results(
     log=None,
 ):
     # scatter predicao x target
-    log.info("Plotting scatter plot of target x predicted")
+    log.info("Plotting Scatter Plot of target x predicted")
     file_path = (
         results_folder + "scatter_pred_x_target_" + dataset_identification + ".png"
     )
@@ -389,6 +427,18 @@ def plot_common_evaluation_binary_classification_results(
         file_path_image=file_path,
     )
 
+    # PR ao longo do tempo
+    log.info("Plotting PR-AUC score over the time")
+    file_path = results_folder + "pr_auc_over_time_" + dataset_identification + ".png"
+    plot_pr_auc_score_over_time(
+        data=data,
+        y_true_column_name=y_target_numerical_col_name,
+        y_probas_column_name=y_predict_numerical_col_name,
+        date_column_name=date_reference_col_name,
+        title="PR-AUC Statistic over time " + dataset_identification + " dataset",
+        log=log,
+    )
+
     # ROC Curve
     log.info("Plotting ROC Curve")
     file_path = results_folder + "roc_curve_" + dataset_identification + ".png"
@@ -415,6 +465,43 @@ def plot_common_evaluation_binary_classification_results(
         view_chart=view_charts,
         save_chart=save_charts,
         file_path_image=file_path,
+    )
+
+    # ROC ao longo do tempo
+    log.info("Plotting ROC-AUC score over the time")
+    file_path = results_folder + "roc_auc_over_time_" + dataset_identification + ".png"
+    plot_roc_auc_score_over_time(
+        data=data,
+        y_true_column_name=y_target_numerical_col_name,
+        y_probas_column_name=y_predict_numerical_col_name,
+        date_column_name=date_reference_col_name,
+        title="ROC-AUC Statistic over time " + dataset_identification + " dataset",
+        log=log,
+    )
+
+    # KS curve
+    log.info("Plotting KS Curve")
+    file_path = results_folder + "ks_curve_" + dataset_identification + ".png"
+    plot_ks_statistic(
+        data=data,
+        y_true_column_name=y_target_numerical_col_name,
+        y_probas_column_name=y_predict_numerical_col_name,
+        title="KS Statistic Plot " + dataset_identification + " dataset",
+        view_chart=view_charts,
+        save_chart=save_charts,
+        file_path_image=file_path,
+    )
+
+    # KS ao longo do tempo
+    log.info("Plotting KS Metric over the time")
+    file_path = results_folder + "ks_over_time_" + dataset_identification + ".png"
+    plot_ks_score_over_time(
+        data=data,
+        y_true_column_name=y_target_numerical_col_name,
+        y_probas_column_name=y_predict_numerical_col_name,
+        date_column_name=date_reference_col_name,
+        title="KS Statistic over time " + dataset_identification + " dataset",
+        log=log,
     )
 
 
@@ -477,20 +564,8 @@ def plot_evaluation_scoring_classification_results(
     log=None,
 ):
 
-    plot_common_evaluation_binary_classification_results(
-        data=data,
-        y_target_numerical_col_name=y_target_numerical_col_name,
-        y_predict_numerical_col_name=y_predict_numerical_col_name,
-        y_no_skill_predict_numerical_col_name=y_no_skill_predict_numerical_col_name,
-        dataset_identification=dataset_identification,
-        results_folder=results_folder,
-        view_charts=view_charts,
-        save_charts=save_charts,
-        log=log,
-    )
-
     # Histograma de score entre as classes
-    log.info("Plotting histogram of two classes")
+    log.info("Plotting Score Histogram of two classes")
     file_path = results_folder + "histogram_classes_" + dataset_identification + ".png"
     plot_histogram_binary_classes(
         data=data,
@@ -499,14 +574,14 @@ def plot_evaluation_scoring_classification_results(
         title="Histogram of scores between classes "
         + dataset_identification
         + " dataset",
-        cut_offs=[0.2, 0.7],
+        # cut_offs=[0.2, 0.7],
         view_chart=view_charts,
         save_chart=save_charts,
         file_path_image=file_path,
     )
 
     # Distribuicoes de score entre as classes
-    log.info("Plotting distribution of two classes")
+    log.info("Plotting Score Density Distribution of two classes")
     file_path = (
         results_folder + "distribution_classes_" + dataset_identification + ".png"
     )
@@ -517,34 +592,23 @@ def plot_evaluation_scoring_classification_results(
         title="Distribution of scores between classes "
         + dataset_identification
         + " dataset",
-        cut_offs=[0.2, 0.7],
+        # cut_offs=[0.2, 0.7],
         view_chart=view_charts,
         save_chart=save_charts,
         file_path_image=file_path,
     )
 
-    # KS curve
-    log.info("Plotting KS curve")
-    file_path = results_folder + "ks_curve_" + dataset_identification + ".png"
-    plot_ks_statistic(
+    plot_common_evaluation_binary_classification_results(
         data=data,
-        y_true_column_name=y_target_numerical_col_name,
-        y_probas_column_name=y_predict_numerical_col_name,
-        title="KS Statistic Plot " + dataset_identification + " dataset",
-        view_chart=view_charts,
-        save_chart=save_charts,
-        file_path_image=file_path,
-    )
-
-    # KS ao longo do tempo
-    log.info("Plotting ks metric over the time")
-    file_path = results_folder + "ks_over_time_" + dataset_identification + ".png"
-    plot_ks_score_over_time(
-        data=data,
-        y_true_column_name=y_target_numerical_col_name,
-        y_probas_column_name=y_predict_numerical_col_name,
-        date_column_name=date_reference_column_name,
-        title="KS Statistic over time " + dataset_identification + " dataset",
+        y_target_numerical_col_name=y_target_numerical_col_name,
+        y_predict_numerical_col_name=y_predict_numerical_col_name,
+        date_reference_col_name=date_reference_column_name,
+        y_no_skill_predict_numerical_col_name=y_no_skill_predict_numerical_col_name,
+        dataset_identification=dataset_identification,
+        results_folder=results_folder,
+        view_charts=view_charts,
+        save_charts=save_charts,
+        log=log,
     )
 
 
@@ -651,7 +715,7 @@ def evaluate_scoring_classification(
     log: object = None,
 ):
 
-    log.title("Evaluating scoring classification model metrics...")
+    log.subtitle("Evaluating scoring classification model metrics...")
 
     results_folder_metrics = results_folder + "metrics/"
 
@@ -669,7 +733,7 @@ def evaluate_scoring_classification(
         log=log,
     )
 
-    log.title("Evaluating scoring classification model data visualization...")
+    log.subtitle("Ploting scoring classification results...")
 
     results_folder_charts = results_folder + "charts/"
 

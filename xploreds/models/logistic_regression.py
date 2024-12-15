@@ -27,7 +27,7 @@ class XLogisticRegression(XploreDSModel):
     ) -> None:
 
         # aplicando processamento de scaling no dataset
-        self.log.title("Input and output variables pre-processing...")
+        self.log.subtitle("Input and output variables pre-processing...")
 
         data = self.model_io_fit_transform(
             data=data,
@@ -39,6 +39,7 @@ class XLogisticRegression(XploreDSModel):
         if self.model_config.set_intersection_with_zero == False:
             data_input = sm.add_constant(data_input)
 
+        # configurando funcao de saida
         if self.tunning_config.fit_algorithm == FitAlgorithm.maximum_likelihood:
             if self.model_config.topology == Topology.logit:
                 self.model = sm.Logit(

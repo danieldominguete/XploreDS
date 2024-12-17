@@ -17,3 +17,4 @@ setuptools
 wheel
 twine
 evidently==0.5.0
+featuretools==1.31.0

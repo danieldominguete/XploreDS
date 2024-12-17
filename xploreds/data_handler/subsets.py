@@ -12,7 +12,7 @@ project_folder = Path(__file__).resolve().parents[2]
 sys.path.append(str(project_folder))
 
 from xploreds.data_analysis.drift import calculate_psi_score
-from xploreds.data_visualization.data_viz_plotly import plot_heatmap_simple
+from xploreds.data_visualization.data_viz_plotly import plot_heatmap_simple, plot_bar
 
 
 def create_train_test_data_subsets(
@@ -261,16 +261,52 @@ def check_drift_subsets(
         columns={"index": "variable"}
     )
 
-    plot_heatmap_simple(
+    variables_psi_analysis = variables_psi_analysis.sort_values(
+        by=["train_oos"], ascending=True
+    )
+
+    plot_bar(
         data=variables_psi_analysis,
-        x_ref_col_name="variable",
-        y_values_col_list=["train_oos", "train_oot"],
-        title="PSI subsets drift analysis",
+        y_col_name="variable",
+        x_col_name="train_oos",
+        orientation="h",
+        title="PSI subsets drift analysis - Train x Out of Sample",
         view_chart=view_plots,
         save_chart=save_plots,
-        show_values=False,
         file_path_image=output_folder_path
         + "/charts/"
         + prefix_label
-        + "_psi_drift_analysis.png",
+        + "_oos_psi_drift_analysis.png",
     )
+
+    variables_psi_analysis = variables_psi_analysis.sort_values(
+        by=["train_oot"], ascending=True
+    )
+
+    plot_bar(
+        data=variables_psi_analysis,
+        y_col_name="variable",
+        x_col_name="train_oot",
+        orientation="h",
+        title="PSI subsets drift analysis - Train x Out of Time",
+        view_chart=view_plots,
+        save_chart=save_plots,
+        file_path_image=output_folder_path
+        + "/charts/"
+        + prefix_label
+        + "_oot_psi_drift_analysis.png",
+    )
+
+    # plot_heatmap_simple(
+    #     data=variables_psi_analysis,
+    #     x_ref_col_name="variable",
+    #     y_values_col_list=["train_oos", "train_oot"],
+    #     title="PSI subsets drift analysis",
+    #     view_chart=view_plots,
+    #     save_chart=save_plots,
+    #     show_values=False,
+    #     file_path_image=output_folder_path
+    #     + "/charts/"
+    #     + prefix_label
+    #     + "_psi_drift_analysis.png",
+    # )

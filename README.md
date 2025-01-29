@@ -1,14 +1,14 @@
-# About XploreDS
+# XploreDS
 
 Easy-to-use package of the most relevant Data Science techniques.
  
-## Getting Started
+# Getting Started
 
-### Dependencies
+## Dependencies
 
 You need Python 3.9 or later to use **XploreDS**. You can find it at [python.org](https://www.python.org/).
 
-### Library installation
+## Library installation
 
 For just use the library XploreDS in your project:
 
@@ -16,7 +16,7 @@ For just use the library XploreDS in your project:
 pip install xploreds
 ```
 
-### Cookbooks 
+## Cookbooks 
 
 For use the boilerplates with examples of XploreDS applications:
 
@@ -32,11 +32,9 @@ and explore the `src/cookbook` for standalone scripts or execute the customized 
 python main_pipeline_execution.py -f pipeline_config/CONFIG_FILE.json
 ```
 
-# Library Functionalities
+## Library Modules
 
-This is the list of techniques available: 
-
-## Data Acquisition
+### Data Acquisition
 
 Data acquisition is the process of gathering and measuring information on variables of interest in an established systematic fashion. 
 
@@ -48,7 +46,7 @@ Subjects and Tools:
  
 - [Data Repositories Integration](notes/data_acquisition.md#public-datasets-integrations)
 
-## Data Preprocessing
+### Data Preprocessing
 
 - Rename columns :hourglass_flowing_sand:
 - Missing values :hourglass_flowing_sand:
@@ -57,9 +55,9 @@ Subjects and Tools:
 
 [Data Analysis](notes/data_analysis.md)
 
-## Modeling
+### Modeling
 
-## xAI
+### xAI
 
 # Bug Reports
 

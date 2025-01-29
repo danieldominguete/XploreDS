@@ -1,44 +1,13 @@
-# XploreDS Features Mapping
+# XploreDS Techniques Mapping
 
-# Data Aquisition
+## Data Aquisition
 
-- Download datasets from openML
-
-# Data Analytics
-
-## Data Visualization
-
-- Histogram
+- Download datasets from openML :white_check_mark:
 
 ## Data Preprocessing
 
 - Rename columns
 - Missing values
-  
-## Feature Building
-
-### Feature Encoding
-
-#### Categorical Encoding
-
-- One Hot Encoding
-
-#### Char Encoding
-
-#### Word Encoding
-
-#### Doc Encoding
-
-### Dimension Reduction
-
-### Feature Scaling
-
-- Min Max Scaling
-- Mean Std Scaling
-
-## Master Table Bulding
-
-- Join independent datasets
 
 ## Data Analysis
 
@@ -69,11 +38,39 @@
 - Numerical Target
   - Correlation metrics
 
+### Data Visualization
+
+- Histogram
+
+## Feature Building
+
+### Feature Encoding
+
+#### Categorical Encoding
+
+- One Hot Encoding
+
+#### Char Encoding
+
+#### Word Encoding
+
+#### Doc Encoding
+
+### Dimension Reduction
+
+### Feature Scaling
+
+- Min Max Scaling
+- Mean Std Scaling
+
+## Master Table Bulding
+
+- Join independent datasets
+
+
 ## Dataset Bulding
 
-# Models Design
-
-## Machine Learning
+## Models Design
 
 ### Unsupervised Learning
 

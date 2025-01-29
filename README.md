@@ -32,9 +32,9 @@ and explore the `src/cookbook` for standalone scripts or execute the customized 
 python main_pipeline_execution.py -f pipeline_config/CONFIG_FILE.json
 ```
 
-# Main Features
+# Library Functionalities
 
-- License example
+This is the list of techniques available: [Techniques](notes/techniques.md)
 
 # Bug Reports
 

@@ -34,7 +34,32 @@ python main_pipeline_execution.py -f pipeline_config/CONFIG_FILE.json
 
 # Library Functionalities
 
-This is the list of techniques available: [Techniques](notes/techniques.md)
+This is the list of techniques available: 
+
+## Data Acquisition
+
+Data acquisition is the process of gathering and measuring information on variables of interest in an established systematic fashion. 
+
+In the context of data science, it involves collecting data from various sources to be used for analysis, modeling, and decision-making. 
+
+The XploreDS library provides tools to facilitate the acquisition of datasets, ensuring that the data is readily available for subsequent processing and analysis.
+
+Subjects and Tools:
+ 
+- [Data Repositories Integration](notes/data_acquisition.md#public-datasets-integrations)
+
+## Data Preprocessing
+
+- Rename columns :hourglass_flowing_sand:
+- Missing values :hourglass_flowing_sand:
+- 
+## Data Mining
+
+[Data Analysis](notes/data_analysis.md)
+
+## Modeling
+
+## xAI
 
 # Bug Reports
 

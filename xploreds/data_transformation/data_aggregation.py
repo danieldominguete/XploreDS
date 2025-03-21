@@ -14,7 +14,7 @@ project_folder = Path(__file__).resolve().parents[2]
 sys.path.append(str(project_folder))
 
 
-def generate_simple_statistics_features_by_entity_aggregation_for_numerical_variables(
+def generate_features_by_entity_aggregation_for_numerical_variables(
     data: pd.DataFrame,
     id_data_entity_column_name: str,
     numerical_variables_columns_names: list = [],
@@ -58,7 +58,7 @@ def generate_simple_statistics_features_by_entity_aggregation_for_numerical_vari
             )
             # calculando as features de calculos customizados
             data_agg = data.groupby(id_data_entity_column_name)[var].apply(
-                custom_numerical_aggregations
+                custom_non_timing_numerical_aggregations
             )
 
             data_agg = data_agg.unstack()
@@ -82,7 +82,7 @@ def generate_simple_statistics_features_by_entity_aggregation_for_numerical_vari
     return data_agg_final
 
 
-def generate_simple_statistics_features_by_entity_aggregation_for_categorical_variables(
+def generate_features_by_entity_aggregation_for_categorical_variables(
     data: pd.DataFrame,
     id_data_entity_column_name: str,
     categorical_variables_columns_names: list = [],
@@ -126,7 +126,7 @@ def generate_simple_statistics_features_by_entity_aggregation_for_categorical_va
     return data_agg_final
 
 
-def generate_simple_statistics_features_by_entity_aggregation_for_datetime_variables(
+def generate_features_by_entity_aggregation_for_datetime_variables(
     data: pd.DataFrame,
     id_data_entity_column_name: str,
     datetime_columns: list = [],
@@ -166,7 +166,7 @@ def generate_simple_statistics_features_by_entity_aggregation_for_datetime_varia
 
             # customizations
             data_agg = data.groupby(id_data_entity_column_name)[var].apply(
-                custom_datetime_aggregations
+                custom_non_timing_datetime_aggregations
             )
 
             data_agg = data_agg.unstack()
@@ -185,7 +185,7 @@ def generate_simple_statistics_features_by_entity_aggregation_for_datetime_varia
     return data_agg_final
 
 
-def custom_numerical_aggregations(x):
+def custom_non_timing_numerical_aggregations(x):
     # Do calculations in one pass through the data
     values = x.values
     return pd.Series(
@@ -193,7 +193,7 @@ def custom_numerical_aggregations(x):
     )
 
 
-def custom_datetime_aggregations(x):
+def custom_non_timing_datetime_aggregations(x):
     values = x
     return pd.Series(
         {
@@ -201,6 +201,69 @@ def custom_datetime_aggregations(x):
             "weekend_count": feature_weekend_count(values),
         }
     )
+
+
+def generate_features_by_entity_aggregation_and_timing_references_for_numerical_variables(
+    data: pd.DataFrame,
+    id_entity_reference_column_name: str,
+    feature_datetime_reference_column_name: str,
+    datetime_pre_summarization_step_unit: str,
+    raw_data_datetime_reference_column_name: str,
+    raw_data_past_steps_window_from_reference: int,
+    numerical_variables_columns_names: list = [],
+    log: object = None,
+) -> pd.DataFrame:
+
+    # final dataframes
+    data_agg_final = (
+        data.groupby(
+            [id_entity_reference_column_name, feature_datetime_reference_column_name]
+        )
+        .size()
+        .reset_index()
+    )
+
+    for var in numerical_variables_columns_names:
+        if var not in data.columns:
+            raise ValueError(f"Column {var} not found in DataFrame")
+
+        try:
+            if log:
+                log.info(f"Generating timing features of {var} ...")
+
+            # pre sumarizacao de dados na unidade basica de tempo
+            # truncando o timestamp na granularidade desejada para futura agregacao nao ordenada
+            if datetime_pre_summarization_step_unit == "M":
+                data[raw_data_datetime_reference_column_name + "_trunc"] = (
+                    data[raw_data_datetime_reference_column_name]
+                    .dt.to_period("M")
+                    .dt.to_timestamp()
+                )
+
+            # agregando as datas truncadas em valores de sumarizacao
+            data_pre_sum = data.groupby(
+                id_entity_reference_column_name,
+                feature_datetime_reference_column_name,
+                raw_data_datetime_reference_column_name + "_trunc",
+            ).agg(
+                {
+                    var: [
+                        "sum",
+                    ]
+                }
+            )
+
+            data_pre_sum.columns = [
+                "_".join(col).strip() for col in data_pre_sum.columns.values
+            ]
+            data_pre_sum.reset_index(inplace=True)
+
+        except Exception as e:
+            if log:
+                log.error(f"Error generating features: {str(e)}")
+            raise
+
+    return data_agg_final
 
 
 def feature_skew(values):

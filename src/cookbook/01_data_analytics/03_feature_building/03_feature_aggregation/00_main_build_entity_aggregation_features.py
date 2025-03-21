@@ -23,9 +23,9 @@ from xploreds.data_handler.file import (
     save_dataframe_to_parquet,
 )
 from xploreds.data_transformation.data_aggregation import (
-    generate_simple_statistics_features_by_entity_aggregation_for_numerical_variables,
-    generate_simple_statistics_features_by_entity_aggregation_for_categorical_variables,
-    generate_simple_statistics_features_by_entity_aggregation_for_datetime_variables,
+    generate_features_by_entity_aggregation_for_numerical_variables,
+    generate_features_by_entity_aggregation_for_categorical_variables,
+    generate_features_by_entity_aggregation_for_datetime_variables,
 )
 
 # ==================================================================================
@@ -90,35 +90,29 @@ df_book = df_customers[entity_reference_column_name].drop_duplicates()
 
 log.title("Numerical Features by Entity Aggregation")
 
-df_book_1 = (
-    generate_simple_statistics_features_by_entity_aggregation_for_numerical_variables(
-        data=df_raw,
-        id_data_entity_column_name=entity_reference_column_name,
-        numerical_variables_columns_names=["total", "quantity"],
-        log=log,
-    )
+df_book_1 = generate_features_by_entity_aggregation_for_numerical_variables(
+    data=df_raw,
+    id_data_entity_column_name=entity_reference_column_name,
+    numerical_variables_columns_names=["total", "quantity"],
+    log=log,
 )
 
 log.title("Categorical Features by Entity Aggregation")
 
-df_book_2 = (
-    generate_simple_statistics_features_by_entity_aggregation_for_categorical_variables(
-        data=df_raw,
-        id_data_entity_column_name=entity_reference_column_name,
-        categorical_variables_columns_names=["product_id"],
-        log=log,
-    )
+df_book_2 = generate_features_by_entity_aggregation_for_categorical_variables(
+    data=df_raw,
+    id_data_entity_column_name=entity_reference_column_name,
+    categorical_variables_columns_names=["product_id"],
+    log=log,
 )
 
 log.title("Datetime Features by Entity Aggregation")
 
-df_book_3 = (
-    generate_simple_statistics_features_by_entity_aggregation_for_datetime_variables(
-        data=df_raw,
-        id_data_entity_column_name="customer_name",
-        datetime_columns=["order_date"],
-        log=log,
-    )
+df_book_3 = generate_features_by_entity_aggregation_for_datetime_variables(
+    data=df_raw,
+    id_data_entity_column_name="customer_name",
+    datetime_columns=["order_date"],
+    log=log,
 )
 
 

@@ -22,6 +22,9 @@ from xploreds.data_handler.file import (
     load_dataframe_from_parquet,
     save_dataframe_to_parquet,
 )
+from xploreds.data_transformation.data_aggregation import (
+    generate_features_by_entity_aggregation_and_timing_references_for_numerical_variables,
+)
 from xploreds.data_handler.date_time import create_past_datetime_mask_from_reference
 
 
@@ -80,22 +83,34 @@ df_raw = df_raw.drop_duplicates(
 
 # truncar data para unidade de referencia temporal
 df_raw["order_date"] = df_raw["order_date"].dt.to_period("D").dt.to_timestamp()
+df_raw["dt_predict"] = pd.to_datetime(df_raw["order_date"].max())
 
 # ==================================================================================
 # Regras de negócio
 # ==================================================================================
 
-# criação da mascara de slots temporais
-df_mask = create_past_datetime_mask_from_reference(
+df_book = generate_features_by_entity_aggregation_and_timing_references_for_numerical_variables(
     data=df_raw,
-    id_entity_column_name="customer_name",
-    t0_reference_column_name="order_date",
-    time_step_unit="months",
-    time_step_amount=3,
+    id_entity_reference_column_name="customer_name",
+    feature_datetime_reference_column_name="dt_predict",
+    datetime_pre_summarization_step_unit="M",
+    raw_data_datetime_reference_column_name="order_date",
+    raw_data_past_steps_window_from_reference=3,
+    numerical_variables_columns_names=["total"],
     log=log,
 )
 
-df_mask = df_mask.sort_values(by=["customer_name", "order_date", "step_id"])
+# # criação da mascara de slots temporais
+# df_mask = create_past_datetime_mask_from_reference(
+#     data=df_raw,
+#     id_entity_column_name="customer_name",
+#     t0_reference_column_name="order_date",
+#     time_step_unit="months",
+#     time_step_amount=3,
+#     log=log,
+# )
+
+# df_mask = df_mask.sort_values(by=["customer_name", "order_date", "step_id"])
 
 # agregar eventos na mesma unidade temporal
 

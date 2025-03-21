@@ -1,5 +1,5 @@
 """
-Xplore DS :: Simple aggregation features cookbook script template
+Xplore DS :: Entity aggregation features cookbook script template
 """
 
 # Importando bibliotecas nativas
@@ -22,12 +22,10 @@ from xploreds.data_handler.file import (
     load_dataframe_from_parquet,
     save_dataframe_to_parquet,
 )
-from xploreds.variables.variables_aggregation import (
-    generate_primitive_numerical_features,
-    generate_primitive_categorical_features,
-    generate_custom_numerical_features,
-    generate_primitive_datetime_features,
-    generate_custom_datetime_features,
+from xploreds.data_transformation.data_aggregation import (
+    generate_simple_statistics_features_by_entity_aggregation_for_numerical_variables,
+    generate_simple_statistics_features_by_entity_aggregation_for_categorical_variables,
+    generate_simple_statistics_features_by_entity_aggregation_for_datetime_variables,
 )
 
 # ==================================================================================
@@ -51,6 +49,8 @@ log.init_run()
 
 log.title("Script setup")
 
+# Setup de entidade para agregacao
+entity_reference_column_name = "customer_name"
 
 # Configuracao de dados de saida
 output_feature_book_file_path = "data/credit-g/stage/credit-g_aggregation_book.parquet"
@@ -83,48 +83,44 @@ df_raw = pd.merge(
 # Regras de negócio
 # ==================================================================================
 
+# criacao de mascara de entitades para agregacao
+df_book = df_customers[entity_reference_column_name].drop_duplicates()
+
 # agregacao por variaveis numericas associadas a uma chave primaria sem filtro temporal
 
-log.title("Numerical Features Simple Aggregation")
+log.title("Numerical Features by Entity Aggregation")
 
-df_book_1 = generate_primitive_numerical_features(
-    data=df_raw,
-    id_data_entity_column_name="customer_name",
-    numerical_features_columns_names=["total", "quantity"],
-    log=log,
+df_book_1 = (
+    generate_simple_statistics_features_by_entity_aggregation_for_numerical_variables(
+        data=df_raw,
+        id_data_entity_column_name=entity_reference_column_name,
+        numerical_variables_columns_names=["total", "quantity"],
+        log=log,
+    )
 )
 
-df_book_2 = generate_custom_numerical_features(
-    data=df_raw,
-    id_data_entity_column_name="customer_name",
-    numerical_features_columns_names=["total", "quantity"],
-    log=log,
+log.title("Categorical Features by Entity Aggregation")
+
+df_book_2 = (
+    generate_simple_statistics_features_by_entity_aggregation_for_categorical_variables(
+        data=df_raw,
+        id_data_entity_column_name=entity_reference_column_name,
+        categorical_variables_columns_names=["product_id"],
+        log=log,
+    )
 )
 
-log.title("Categorical Features Simple Aggregation")
+log.title("Datetime Features by Entity Aggregation")
 
-df_book_3 = generate_primitive_categorical_features(
-    data=df_raw,
-    id_data_entity_column_name="customer_name",
-    categorical_features_columns_names=["product_id"],
-    log=log,
+df_book_3 = (
+    generate_simple_statistics_features_by_entity_aggregation_for_datetime_variables(
+        data=df_raw,
+        id_data_entity_column_name="customer_name",
+        datetime_columns=["order_date"],
+        log=log,
+    )
 )
 
-log.title("Datetime Features Simple Aggregation")
-
-df_book_4 = generate_primitive_datetime_features(
-    data=df_raw,
-    id_data_entity_column_name="customer_name",
-    datetime_columns=["order_date"],
-    log=log,
-)
-
-df_book_5 = generate_custom_datetime_features(
-    data=df_raw,
-    id_data_entity_column_name="customer_name",
-    datetime_columns=["order_date"],
-    log=log,
-)
 
 # ==================================================================================
 # Salvando artefatos de saida
@@ -134,11 +130,12 @@ log.title("Saving output artifacts")
 
 df_book = pd.merge(
     df_book,
-    df_book_2,
+    df_book_1,
     left_on="customer_name",
     right_on="customer_name",
     how="left",
 )
+
 
 df_book = pd.merge(
     df_book,

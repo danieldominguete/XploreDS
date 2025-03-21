@@ -14,10 +14,10 @@ project_folder = Path(__file__).resolve().parents[2]
 sys.path.append(str(project_folder))
 
 
-def generate_primitive_numerical_features(
+def generate_simple_statistics_features_by_entity_aggregation_for_numerical_variables(
     data: pd.DataFrame,
     id_data_entity_column_name: str,
-    numerical_features_columns_names: list = [],
+    numerical_variables_columns_names: list = [],
     log: object = None,
 ) -> pd.DataFrame:
 
@@ -25,14 +25,15 @@ def generate_primitive_numerical_features(
     id_list = data[id_data_entity_column_name].unique().tolist()
     data_agg_final = pd.DataFrame({id_data_entity_column_name: id_list})
 
-    for var in numerical_features_columns_names:
+    for var in numerical_variables_columns_names:
         if var not in data.columns:
             raise ValueError(f"Column {var} not found in DataFrame")
 
         try:
             if log:
-                log.info(f"Generating primitive numerical features of {var} ...")
+                log.info(f"Generating simple statistics features of {var} ...")
 
+            # calculando as features de calculos built-in
             data_agg = data.groupby(id_data_entity_column_name).agg(
                 {
                     var: [
@@ -51,21 +52,40 @@ def generate_primitive_numerical_features(
             ]
             data_agg.reset_index(inplace=True)
 
+            # agregando as features de calculos built-in
+            data_agg_final = pd.merge(
+                data_agg_final, data_agg, on=id_data_entity_column_name, how="left"
+            )
+            # calculando as features de calculos customizados
+            data_agg = data.groupby(id_data_entity_column_name)[var].apply(
+                custom_numerical_aggregations
+            )
+
+            data_agg = data_agg.unstack()
+
+            data_agg.columns = [var + "_" + col for col in data_agg.columns.values]
+
+            # agregando as features de calculos customizados
+            data_agg_final = pd.merge(
+                data_agg_final, data_agg, on=id_data_entity_column_name, how="left"
+            )
+
         except Exception as e:
             if log:
                 log.error(f"Error generating primitive numerical features: {str(e)}")
             raise
 
-        data_agg_final = pd.merge(
-            data_agg_final, data_agg, on=id_data_entity_column_name, how="left"
-        )
+        if log:
+            n_features = data_agg.shape[1] - 1
+            log.info(f"Total of {n_features} features generated")
+
     return data_agg_final
 
 
-def generate_primitive_categorical_features(
+def generate_simple_statistics_features_by_entity_aggregation_for_categorical_variables(
     data: pd.DataFrame,
     id_data_entity_column_name: str,
-    categorical_features_columns_names: list = [],
+    categorical_variables_columns_names: list = [],
     log: object = None,
 ) -> pd.DataFrame:
 
@@ -73,7 +93,7 @@ def generate_primitive_categorical_features(
     id_list = data[id_data_entity_column_name].unique().tolist()
     data_agg_final = pd.DataFrame({id_data_entity_column_name: id_list})
 
-    for var in categorical_features_columns_names:
+    for var in categorical_variables_columns_names:
         if var not in data.columns:
             raise ValueError(f"Column {var} not found in DataFrame")
 
@@ -106,7 +126,7 @@ def generate_primitive_categorical_features(
     return data_agg_final
 
 
-def generate_primitive_datetime_features(
+def generate_simple_statistics_features_by_entity_aggregation_for_datetime_variables(
     data: pd.DataFrame,
     id_data_entity_column_name: str,
     datetime_columns: list = [],
@@ -144,111 +164,7 @@ def generate_primitive_datetime_features(
                 data_agg_final, data_agg, on=id_data_entity_column_name, how="left"
             )
 
-        except Exception as e:
-            if log:
-                log.error(f"Error generating datetime features: {str(e)}")
-            raise
-
-    return data_agg_final
-
-
-def custom_numerical_aggregations(x):
-    # Do calculations in one pass through the data
-    values = x.values
-    return pd.Series({"calc1": custom_calc1(values), "calc2": custom_calc2(values)})
-
-
-def custom_calc1(values):
-    # Do calculations on the values
-    return np.mean(values)
-
-
-def custom_calc2(values):
-    # Do calculations on the values
-    return np.median(values)
-
-
-def generate_custom_numerical_features(
-    data: pd.DataFrame,
-    id_data_entity_column_name: str,
-    numerical_features_columns_names: list = [],
-    log: object = None,
-) -> pd.DataFrame:
-
-    # final dataframes
-    id_list = data[id_data_entity_column_name].unique().tolist()
-    data_agg_final = pd.DataFrame({id_data_entity_column_name: id_list})
-
-    for var in numerical_features_columns_names:
-        if var not in data.columns:
-            raise ValueError(f"Column {var} not found in DataFrame")
-
-        try:
-            if log:
-                log.info(f"Generating custom numerical features of {var} ...")
-
-            data_agg = data.groupby(id_data_entity_column_name)[var].apply(
-                custom_numerical_aggregations
-            )
-
-            data_agg = data_agg.unstack()
-
-            data_agg.columns = [var + "_" + col for col in data_agg.columns.values]
-
-        except Exception as e:
-            if log:
-                log.error(f"Error generating custom numerical features: {str(e)}")
-            raise
-
-        data_agg_final = pd.merge(
-            data_agg_final, data_agg, on=id_data_entity_column_name, how="left"
-        )
-    return data_agg_final
-
-
-def custom_datetime_aggregations(x):
-    values = x
-    return pd.Series(
-        {
-            "weekday_count": feat_weekday_count(values),
-            "weekend_count": feat_weekend_count(values),
-        }
-    )
-
-
-def feat_weekday_count(values):
-    value = (values.dt.weekday < 5).sum()
-    return value
-
-
-def feat_weekend_count(values):
-    value = (values.dt.weekday >= 5).sum()
-    return value
-
-
-def feat_morning_count(values):
-    value = (values.dt.hour < 12).sum()
-    return value
-
-
-def generate_custom_datetime_features(
-    data: pd.DataFrame,
-    id_data_entity_column_name: str,
-    datetime_columns: list = [],
-    log: object = None,
-) -> pd.DataFrame:
-
-    id_list = data[id_data_entity_column_name].unique().tolist()
-    data_agg_final = pd.DataFrame({id_data_entity_column_name: id_list})
-
-    for var in datetime_columns:
-        if var not in data.columns:
-            raise ValueError(f"Column {var} not found in DataFrame")
-
-        try:
-            if log:
-                log.info(f"Generating custom datetime features for {var}")
-
+            # customizations
             data_agg = data.groupby(id_data_entity_column_name)[var].apply(
                 custom_datetime_aggregations
             )
@@ -267,3 +183,50 @@ def generate_custom_datetime_features(
             raise
 
     return data_agg_final
+
+
+def custom_numerical_aggregations(x):
+    # Do calculations in one pass through the data
+    values = x.values
+    return pd.Series(
+        {"skew": feature_skew(values), "kurtosis": feature_kurtosis(values)}
+    )
+
+
+def custom_datetime_aggregations(x):
+    values = x
+    return pd.Series(
+        {
+            "weekday_count": feature_weekday_count(values),
+            "weekend_count": feature_weekend_count(values),
+        }
+    )
+
+
+def feature_skew(values):
+    # sample skewness of a data set
+    from scipy.stats import skew
+
+    return skew(values)
+
+
+def feature_kurtosis(values):
+    # Compute the kurtosis (Fisher or Pearson) of a dataset
+    from scipy.stats import kurtosis
+
+    return kurtosis(values)
+
+
+def feature_weekday_count(values):
+    value = (values.dt.weekday < 5).sum()
+    return value
+
+
+def feature_weekend_count(values):
+    value = (values.dt.weekday >= 5).sum()
+    return value
+
+
+def feature_morning_count(values):
+    value = (values.dt.hour < 12).sum()
+    return value

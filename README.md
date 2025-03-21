@@ -32,9 +32,9 @@ and explore the `src/cookbook` for standalone scripts or execute the customized 
 python main_pipeline_execution.py -f pipeline_config/CONFIG_FILE.json
 ```
 
-## Library Modules
+# Library Modules
 
-### Data Acquisition
+## Data Acquisition
 
 Data acquisition is the process of gathering and measuring information on variables of interest in an established systematic fashion. 
 
@@ -46,7 +46,7 @@ Subjects and Tools:
  
 - [Data Repositories Integration](notes/data_acquisition.md#public-datasets-integrations)
 
-### Data Preprocessing
+## Data Preprocessing
 
 - Rename columns :hourglass_flowing_sand:
 - Missing values :hourglass_flowing_sand:
@@ -55,9 +55,9 @@ Subjects and Tools:
 
 [Data Analysis](notes/data_analysis.md)
 
-### Modeling
+## Modeling
 
-### xAI
+## xAI
 
 # Bug Reports
 

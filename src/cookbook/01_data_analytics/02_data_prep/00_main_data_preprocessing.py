@@ -36,7 +36,7 @@ from xploreds.data_handler.outliers import (
     remove_multidimensional_outliers_by_isolation_forest,
     replace_unidimensional_outliers_by_winsorizing,
 )
-from xploreds.variables.variables_scaling import (
+from xploreds.data_transformation.data_scaling import (
     scaler_variable_fit_transform,
 )
 from xploreds.data_schemas.pre_processing_config import ScalingMethod

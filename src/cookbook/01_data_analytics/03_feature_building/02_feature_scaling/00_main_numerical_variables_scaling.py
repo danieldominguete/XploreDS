@@ -24,7 +24,7 @@ from xploreds.data_schemas.model_io_config import (
     VariableConfig,
     ScalingMethod,
 )
-from xploreds.variables.variables_scaling import scaler_variable_fit_transform
+from xploreds.data_transformation.data_scaling import scaler_variable_fit_transform
 
 # ==================================================================================
 # Setup do script

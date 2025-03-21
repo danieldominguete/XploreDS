@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib
-project_folder = Path(__file__).resolve().parents[5]
+project_folder = Path(__file__).resolve().parents[6]
 sys.path.append(str(project_folder))
 
 # Importando biblioteca Xplore DS
@@ -24,7 +24,7 @@ from xploreds.data_schemas.model_io_config import (
     VariableConfig,
     EncodingMethod,
 )
-from xploreds.variables.variables_encoding import encoder_variable_fit_transform
+from xploreds.data_transformation.data_encoding import encoder_variable_fit_transform
 
 # ==================================================================================
 # Setup do script

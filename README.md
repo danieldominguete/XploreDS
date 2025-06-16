@@ -32,6 +32,16 @@ and explore the `src/cookbook` for standalone scripts or execute the customized 
 python main_pipeline_execution.py -f pipeline_config/CONFIG_FILE.json
 ```
 
+## Dataset 
+
+This project uses the [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) as the standard example to illustrate the features of the **XploreDS** package.
+
+This dataset provides detailed information about orders placed on a large e-commerce platform in Brazil, including data on customers, products, payments, reviews, and deliveries. It is widely used in data science projects to demonstrate techniques for analysis, preprocessing, data mining, and predictive modeling.
+
+Please download it and save all .csv files at `data/credit-g/raw/ecommerce/` folder.
+
+Throughout the documentation and cookbooks, practical examples will use this dataset to show how to apply XploreDS tools to real-world data analysis problems.
+
 # Library Modules
 
 ## Data Acquisition

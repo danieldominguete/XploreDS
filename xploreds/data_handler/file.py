@@ -53,6 +53,8 @@ def load_dataframe_from_csv(
         - If a logging object is provided, it logs information about the loaded dataset.
 
     """
+    if log:
+        log.info("Loading dataset from file: " + filepath)
 
     # number of rows from file without header
     num_lines = sum(1 for l in open(filepath)) - 1
@@ -61,8 +63,8 @@ def load_dataframe_from_csv(
     num_lines_selected = int(perc_sample * num_lines)
     # skip_lines = num_lines - num_lines_selected
 
-    log.info("Total samples: {a:.1f}".format(a=num_lines))
-    log.info("Total samples target: {a:.1f}".format(a=num_lines_selected))
+    log.info("Total samples: {a:.0f}".format(a=num_lines))
+    log.info("Total samples target: {a:.0f}".format(a=num_lines_selected))
 
     # Partial loading
     if perc_sample < 1:
@@ -142,8 +144,8 @@ def load_dataframe_from_csv(
                 skipinitialspace=True,
             )
 
-    log.info("Selected dataset samples: {a:.1f}".format(a=df.shape[0]))
-    log.info("Number of variables: {a:.1f}".format(a=df.shape[1]))
+    log.info("Selected dataset samples: {a:.0f}".format(a=df.shape[0]))
+    log.info("Number of variables: {a:.0f}".format(a=df.shape[1]))
     log.info("Variables list: {a:s}".format(a=str(df.columns.values.tolist())))
 
     return df

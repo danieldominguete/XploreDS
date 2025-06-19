@@ -1,5 +1,10 @@
 """
-Xplore DS :: Build Raw Data for Ecommerce Dataset
+Xplore DS :: Build Target for Ecommerce Dataset
+
+Classificacao Binaria = "Review Positiva" ou "Review Negativa"
+Classificacao Multiclasse = 0 a 5
+Predicao de Regressao = "Nota da Review"
+
 """
 
 # Importando bibliotecas nativas
@@ -19,8 +24,10 @@ from xploreds.environment.environment import XploreDSLocalhost
 from xploreds.environment.logging import XploreDSLogging
 from xploreds.data_handler.file import (
     load_dataframe_from_csv,
+    load_dataframe_from_parquet,
     save_dataframe_to_parquet,
 )
+from xploreds.data_handler.dataframe import rename_columns, cast_columns_type_by_prefix
 
 # ==================================================================================
 # Setup do script
@@ -43,15 +50,11 @@ log.init_run()
 
 log.title("Script setup")
 
-
 # Configuracao de dados de entrada
-input_dataset_file_path_separator = ","
-input_reviews_file_path = "data/ecommerce/raw/olist_order_reviews_dataset.csv"
+input_reviews_file_path = "data/ecommerce/curated/olist_reviews_curated_dataset.parquet"
 
 # Configuracao de dados de saida
-output_dataset_file_path = (
-    "data/ecommerce/curated/olist_reviews_curated_dataset.parquet"
-)
+output_dataset_file_path = "data/ecommerce/stage/olist_review_target_dataset.parquet"
 
 # ==================================================================================
 # Carregando base de dados
@@ -59,19 +62,36 @@ output_dataset_file_path = (
 
 log.title("Loading datasets")
 
-reviews_df = load_dataframe_from_csv(
-    filepath=input_reviews_file_path,
-    separator=input_dataset_file_path_separator,
+reviews_df = load_dataframe_from_parquet(
+    file_path=input_reviews_file_path,
+    selected_columns=[
+        "order_id",
+        "review_score",
+    ],
     log=log,
 )
 
 # ==================================================================================
 # Pré-processamento de dados
 # ==================================================================================
+log.title("Preprocessing datasets")
 
-log.title("Removing duplicates from reviews dataset")
+log.subtitle("Removing duplicates")
+
+log.info("Removing duplicates from reviews dataset")
 reviews_df = reviews_df.drop_duplicates(subset=["order_id"], keep="first")
 log.info(f"Dataframe shape after removing duplicates: {reviews_df.shape[0]} rows")
+
+log.subtitle("Rename columns")
+
+reviews_df = rename_columns(
+    data=reviews_df,
+    columns_to_rename={
+        "order_id": "txt_order_id",
+        "review_score": "num_review_score",
+    },
+    log=log,
+)
 
 # ==================================================================================
 # Regras de negócio
@@ -79,6 +99,29 @@ log.info(f"Dataframe shape after removing duplicates: {reviews_df.shape[0]} rows
 
 log.title("Applying business rules")
 
+reviews_df["txt_review_binary"] = reviews_df["num_review_score"].apply(
+    lambda x: "Review Positiva" if x >= 4 else "Review Negativa"
+)
+
+reviews_df["txt_review_multiclass"] = reviews_df["num_review_score"].apply(
+    lambda x: (
+        "Review 5"
+        if x == 5
+        else (
+            "Review 4"
+            if x == 4
+            else (
+                "Review 3"
+                if x == 3
+                else (
+                    "Review 2"
+                    if x == 2
+                    else "Review 1" if x == 1 else "Review Desconhecida"
+                )
+            )
+        )
+    )
+)
 
 # ==================================================================================
 # Salvando artefatos de saida
@@ -86,6 +129,13 @@ log.title("Applying business rules")
 
 log.title("Saving output artifacts")
 
+log.subtitle("Casting columns to appropriate types")
+reviews_df = cast_columns_type_by_prefix(
+    data=reviews_df,
+    log=log,
+)
+
+log.subtitle("Saving dataframe")
 save_dataframe_to_parquet(
     data=reviews_df,
     file_path=output_dataset_file_path,

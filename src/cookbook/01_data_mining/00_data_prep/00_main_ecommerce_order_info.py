@@ -21,6 +21,7 @@ from xploreds.data_handler.file import (
     load_dataframe_from_csv,
     save_dataframe_to_parquet,
 )
+from xploreds.data_handler.dataframe import rename_columns, cast_columns_type_by_prefix
 
 # ==================================================================================
 # Setup do script
@@ -46,12 +47,10 @@ log.title("Script setup")
 
 # Configuracao de dados de entrada
 input_dataset_file_path_separator = ","
-input_payments_file_path = "data/ecommerce/raw/olist_order_payments_dataset.csv"
+input_orders_file_path = "data/ecommerce/raw/olist_orders_dataset.csv"
 
 # Configuracao de dados de saida
-output_dataset_file_path = (
-    "data/ecommerce/curated/olist_payments_curated_dataset.parquet"
-)
+output_dataset_file_path = "data/ecommerce/curated/olist_orders_curated_dataset.parquet"
 
 # ==================================================================================
 # Carregando base de dados
@@ -59,8 +58,8 @@ output_dataset_file_path = (
 
 log.title("Loading datasets")
 
-payments_df = load_dataframe_from_csv(
-    filepath=input_payments_file_path,
+orders_df = load_dataframe_from_csv(
+    file_path=input_orders_file_path,
     separator=input_dataset_file_path_separator,
     log=log,
 )
@@ -69,12 +68,9 @@ payments_df = load_dataframe_from_csv(
 # Pré-processamento de dados
 # ==================================================================================
 
-log.title("Removing duplicates from payments dataset")
-payments_df = payments_df.drop_duplicates(
-    subset=["order_id", "payment_sequential"], keep="first"
-)
-log.info(f"Dataframe shape after removing duplicates: {payments_df.shape[0]} rows")
-
+log.title("Removing duplicates from orders dataset")
+orders_df = orders_df.drop_duplicates(subset=["order_id"], keep="first")
+log.info(f"Dataframe shape after removing duplicates: {orders_df.shape[0]} rows")
 
 # ==================================================================================
 # Regras de negócio
@@ -82,15 +78,20 @@ log.info(f"Dataframe shape after removing duplicates: {payments_df.shape[0]} row
 
 log.title("Applying business rules")
 
-
 # ==================================================================================
 # Salvando artefatos de saida
 # ==================================================================================
 
 log.title("Saving output artifacts")
 
+log.subtitle("Casting columns to appropriate types")
+cast_columns_type_by_prefix(
+    data=reviews_df,
+    log=log,
+)
+
 save_dataframe_to_parquet(
-    data=payments_df,
+    data=orders_df,
     file_path=output_dataset_file_path,
     log=log,
 )

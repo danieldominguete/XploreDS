@@ -14,7 +14,23 @@ sys.path.append(str(project_folder))
 
 
 def normalize_not_valid_values(
-    data: pd, not_valid_values: list = ["na", "N/A"], log=None
+    data: pd,
+    not_valid_values: list = [
+        "na",
+        "N/A",
+        "n/a",
+        "N/A",
+        "NaN",
+        "nan",
+        "null",
+        "NULL",
+        "none",
+        "None",
+        "NoneType",
+        pd.NA,
+        pd.NaT,
+    ],
+    log=None,
 ) -> pd:
     """
     Normalizes not valid values in a pandas DataFrame by replacing them with None.

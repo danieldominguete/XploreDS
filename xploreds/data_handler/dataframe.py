@@ -102,49 +102,29 @@ def cast_columns_type_by_prefix(data: pd, log=None) -> pd:
 
     for column in data.columns:
         if column.startswith("txt_"):
-            data = cast_column_type(data, column, "string", log)
+            if log is not None:
+                log.info(f"Casting column '{column}' to string type...")
+            data[column] = data[column].astype("string")
+        if column.startswith("cat_"):
+            if log is not None:
+                log.info(f"Casting column '{column}' to string type...")
+            data[column] = data[column].astype("string")
         elif column.startswith("num_"):
-            data = cast_column_type(data, column, "float64", log)
+            if log is not None:
+                log.info(f"Casting column '{column}' to numeric type...")
+            data[column] = data[column].astype("float64")
         elif column.startswith("dt_"):
-            data = cast_column_type(data, column, "date", log)
+            if log is not None:
+                log.info(f"Casting column '{column}' to date type...")
+            data[column] = pd.to_datetime(data[column]).dt.date
         elif column.startswith("ts_"):
-            data = cast_column_type(data, column, "datetime64[ns]", log)
+            if log is not None:
+                log.info(f"Casting column '{column}' to datetime type...")
+            data[column] = pd.to_datetime(data[column])
         else:
             if log is not None:
                 log.warning(
                     f"Column '{column}' does not match any known prefix. Skipping type cast."
                 )
-
-    return data
-
-
-def cast_column_type(data: pd, column: str, dtype: str, log=None) -> pd:
-    """
-    Casts the type of a specified column in a pandas DataFrame.
-
-    Parameters
-    ----------
-    data : pandas.DataFrame
-        The DataFrame containing the column to be cast.
-
-    column : str
-        The name of the column to be cast.
-
-    dtype : str
-        The target data type to which the column should be cast.
-
-    log : Optional[Logger]
-        A logger object to output the information. If None, no logging is performed.
-        Default is None.
-
-    Returns
-    -------
-    pandas.DataFrame
-        The DataFrame with the specified column cast to the new type.
-    """
-    if log is not None:
-        log.info(f"Casting column '{column}' to type '{dtype}'...")
-
-    data[column] = data[column].astype(dtype)
 
     return data

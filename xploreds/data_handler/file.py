@@ -15,7 +15,7 @@ sys.path.append(str(project_folder))
 
 
 def load_dataframe_from_csv(
-    filepath: str,
+    file_path: str,
     separator: str = ";",
     selected_columns: list = [],
     select_sample: str = "random",
@@ -54,10 +54,10 @@ def load_dataframe_from_csv(
 
     """
     if log:
-        log.info("Loading dataset from file: " + filepath)
+        log.info("Loading dataset from file: " + file_path)
 
     # number of rows from file without header
-    num_lines = sum(1 for l in open(filepath)) - 1
+    num_lines = sum(1 for l in open(file_path)) - 1
 
     # sample lines size
     num_lines_selected = int(perc_sample * num_lines)
@@ -91,57 +91,57 @@ def load_dataframe_from_csv(
 
         if len(selected_columns) > 0:
             df = pd.read_csv(
-                filepath,
+                file_path,
                 header=0,
                 sep=separator,
                 usecols=selected_columns,
                 skiprows=lines2skip,
                 encoding="utf-8",
-                quotechar='"',
-                escapechar="\\",
-                low_memory=True,
+                # quotechar='"',
+                # escapechar="\\",
+                # low_memory=True,
                 # engine='python',
                 # quoting=csv.QUOTE_NONE,
-                skipinitialspace=True,
+                # skipinitialspace=True,
             )
         else:
             df = pd.read_csv(
-                filepath,
+                file_path,
                 header=0,
                 sep=separator,
                 skiprows=lines2skip,
                 encoding="utf-8",
-                quotechar='"',
-                escapechar="\\",
-                low_memory=True,
+                # quotechar='"',
+                # escapechar="\\",
+                # low_memory=True,
                 # quoting=csv.QUOTE_NONE,
-                skipinitialspace=True,
+                # skipinitialspace=True,
             )
     # Integral loading
     else:
         if len(selected_columns) > 0:
             df = pd.read_csv(
-                filepath,
+                file_path,
                 header=0,
                 sep=separator,
                 usecols=selected_columns,
                 encoding="utf-8",
-                quotechar='"',
-                escapechar="\\",
-                low_memory=True,
+                # quotechar='"',
+                # escapechar="\\",
+                # low_memory=True,
                 # quoting=csv.QUOTE_NONE,
-                skipinitialspace=True,
+                # skipinitialspace=True,
             )
         else:
             df = pd.read_csv(
-                filepath,
+                file_path,
                 header=0,
                 sep=separator,
                 encoding="utf-8",
-                quotechar='"',
-                escapechar="\\",
-                low_memory=True,
-                skipinitialspace=True,
+                # quotechar='"',
+                # escapechar="\\",
+                # low_memory=True,
+                # skipinitialspace=True,
             )
 
     log.info("Selected dataset samples: {a:.0f}".format(a=df.shape[0]))
@@ -369,7 +369,9 @@ def save_dataframe_to_parquet(data: pd, file_path: str, log: object = None) -> N
         log.info("Variables list: " + str(data.columns.values.tolist()))
 
 
-def load_dataframe_from_parquet(file_path: str, log: object = None) -> pd:
+def load_dataframe_from_parquet(
+    file_path: str, selected_columns: list = None, log: object = None
+) -> pd:
     """
     Load a pandas DataFrame from a Parquet file.
 
@@ -384,7 +386,7 @@ def load_dataframe_from_parquet(file_path: str, log: object = None) -> pd:
 
     """
 
-    data = pd.read_parquet(file_path)
+    data = pd.read_parquet(file_path, columns=selected_columns)
 
     if log:
         log.info("Dataframe loaded from parquet file: " + file_path)

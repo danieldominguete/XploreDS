@@ -21,6 +21,7 @@ from xploreds.data_handler.file import (
     load_dataframe_from_csv,
     save_dataframe_to_parquet,
 )
+from xploreds.data_handler.dataframe import rename_columns, cast_columns_type_by_prefix
 
 # ==================================================================================
 # Setup do script
@@ -46,10 +47,12 @@ log.title("Script setup")
 
 # Configuracao de dados de entrada
 input_dataset_file_path_separator = ","
-input_orders_file_path = "data/ecommerce/raw/olist_orders_dataset.csv"
+input_reviews_file_path = "data/ecommerce/raw/olist_order_reviews_dataset.csv"
 
 # Configuracao de dados de saida
-output_dataset_file_path = "data/ecommerce/curated/olist_orders_curated_dataset.parquet"
+output_dataset_file_path = (
+    "data/ecommerce/curated/olist_reviews_curated_dataset.parquet"
+)
 
 # ==================================================================================
 # Carregando base de dados
@@ -57,19 +60,21 @@ output_dataset_file_path = "data/ecommerce/curated/olist_orders_curated_dataset.
 
 log.title("Loading datasets")
 
-orders_df = load_dataframe_from_csv(
-    filepath=input_orders_file_path,
+reviews_df = load_dataframe_from_csv(
+    file_path=input_reviews_file_path,
     separator=input_dataset_file_path_separator,
     log=log,
 )
+
+# reviews_df = pd.read_csv(input_reviews_file_path)
 
 # ==================================================================================
 # Pré-processamento de dados
 # ==================================================================================
 
-log.title("Removing duplicates from orders dataset")
-orders_df = orders_df.drop_duplicates(subset=["order_id"], keep="first")
-log.info(f"Dataframe shape after removing duplicates: {orders_df.shape[0]} rows")
+log.title("Removing duplicates from reviews dataset")
+reviews_df = reviews_df.drop_duplicates(subset=["order_id"], keep="first")
+log.info(f"Dataframe shape after removing duplicates: {reviews_df.shape[0]} rows")
 
 # ==================================================================================
 # Regras de negócio
@@ -77,14 +82,21 @@ log.info(f"Dataframe shape after removing duplicates: {orders_df.shape[0]} rows"
 
 log.title("Applying business rules")
 
+
 # ==================================================================================
 # Salvando artefatos de saida
 # ==================================================================================
 
 log.title("Saving output artifacts")
 
+log.subtitle("Casting columns to appropriate types")
+cast_columns_type_by_prefix(
+    data=reviews_df,
+    log=log,
+)
+
 save_dataframe_to_parquet(
-    data=orders_df,
+    data=reviews_df,
     file_path=output_dataset_file_path,
     log=log,
 )

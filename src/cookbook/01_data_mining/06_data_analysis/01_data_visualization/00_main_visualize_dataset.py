@@ -8,10 +8,10 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 import numpy as np
-
+import pandas as pd
 
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib
-project_folder = Path(__file__).resolve().parents[4]
+project_folder = Path(__file__).resolve().parents[5]
 sys.path.append(str(project_folder))
 
 # Importando biblioteca Xplore DS
@@ -23,6 +23,7 @@ from xploreds.data_handler.file import (
 from xploreds.data_visualization.data_viz_plotly import (
     plot_histogram,
 )
+from xploreds.data_handler.missing import normalize_not_valid_values
 
 # ==================================================================================
 # Setup do script
@@ -46,7 +47,9 @@ log.init_run()
 log.title("Script setup")
 
 # Configuracao de dados de entrada
-input_dataset_file_path = "data/credit-g/raw/credit-g.parquet"
+input_dataset_file_path = (
+    "data/ecommerce/curated/olist_customer_curated_dataset.parquet"
+)
 
 # Configuracao de dados de saida
 view_plots = True
@@ -56,16 +59,23 @@ save_plots = True
 # Carregando base de dados
 # ==================================================================================
 
-log.title("Loading datasets")
+log.title("Loading dataset")
 data = load_dataframe_from_parquet(file_path=input_dataset_file_path, log=log)
+
+# Tratando valores nulos e não válidos
+data = normalize_not_valid_values(
+    data=data,
+    log=log,
+)
 
 # ==================================================================================
 # Regras de negócio
 # ==================================================================================
+log.title("Plotting dataset visualizations")
 
 # listando variaveis por natureza
-categorical_columns = data.select_dtypes(["category"]).columns
-numerical_columns = data.select_dtypes(include=[np.number]).columns
+categorical_columns = [col for col in data.columns if col.startswith("cat_")]
+numerical_columns = [col for col in data.columns if col.startswith("num_")]
 
 # plotando visualizacoes das variaveis categoricas
 for v in categorical_columns:
@@ -88,6 +98,7 @@ for v in numerical_columns:
         data=data,
         x_col_name=v,
         title="Histogram of " + v,
+        marginal_plot_type="box",
         view_chart=view_plots,
         save_chart=save_plots,
         file_path_image=log.log_path + "/histogram_" + v + ".png",

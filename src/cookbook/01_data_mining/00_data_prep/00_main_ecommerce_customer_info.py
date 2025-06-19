@@ -21,6 +21,7 @@ from xploreds.data_handler.file import (
     load_dataframe_from_csv,
     save_dataframe_to_parquet,
 )
+from xploreds.data_handler.dataframe import rename_columns, cast_columns_type_by_prefix
 
 # ==================================================================================
 # Setup do script
@@ -46,13 +47,14 @@ log.title("Script setup")
 
 # Configuracao de dados de entrada
 input_dataset_file_path_separator = ","
-input_items_file_path = "data/ecommerce/raw/olist_order_items_dataset.csv"
-input_products_file_path = "data/ecommerce/raw/olist_products_dataset.csv"
-input_sellers_file_path = "data/ecommerce/raw/olist_sellers_dataset.csv"
+input_orders_file_path = "data/ecommerce/raw/olist_orders_dataset.csv"
+input_customers_file_path = "data/ecommerce/raw/olist_customers_dataset.csv"
 input_zipcodes_file_path = "data/ecommerce/raw/olist_geolocation_dataset.csv"
 
 # Configuracao de dados de saida
-output_dataset_file_path = "data/ecommerce/curated/olist_items_curated_dataset.parquet"
+output_dataset_file_path = (
+    "data/ecommerce/curated/olist_customer_curated_dataset.parquet"
+)
 
 # ==================================================================================
 # Carregando base de dados
@@ -60,27 +62,59 @@ output_dataset_file_path = "data/ecommerce/curated/olist_items_curated_dataset.p
 
 log.title("Loading datasets")
 
-items_df = load_dataframe_from_csv(
-    filepath=input_items_file_path,
+orders_df = load_dataframe_from_csv(
+    file_path=input_orders_file_path,
     separator=input_dataset_file_path_separator,
     log=log,
 )
 
-products_df = load_dataframe_from_csv(
-    filepath=input_products_file_path,
-    separator=input_dataset_file_path_separator,
+orders_df = rename_columns(
+    data=orders_df,
+    columns_to_rename={
+        "order_id": "cat_order_id",
+        "customer_id": "cat_customer_id",
+        "order_status": "cat_order_status",
+        "order_purchase_timestamp": "ts_order_purchase_timestamp",
+        "order_approved_at": "ts_order_approved_at",
+        "order_delivered_carrier_date": "ts_order_delivered_carrier_date",
+        "order_delivered_customer_date": "ts_order_delivered_customer_date",
+        "order_estimated_delivery_date": "dt_order_estimated_delivery_date",
+    },
     log=log,
 )
 
-sellers_df = load_dataframe_from_csv(
-    filepath=input_sellers_file_path,
+customer_df = load_dataframe_from_csv(
+    file_path=input_customers_file_path,
     separator=input_dataset_file_path_separator,
+    log=log,
+)
+customer_df = rename_columns(
+    data=customer_df,
+    columns_to_rename={
+        "customer_id": "cat_customer_id",
+        "customer_unique_id": "cat_customer_unique_id",
+        "customer_zip_code_prefix": "cat_customer_zip_code_prefix",
+        "customer_city": "cat_customer_city",
+        "customer_state": "cat_customer_state",
+    },
     log=log,
 )
 
 zipcodes_df = load_dataframe_from_csv(
-    filepath=input_zipcodes_file_path,
+    file_path=input_zipcodes_file_path,
     separator=input_dataset_file_path_separator,
+    log=log,
+)
+
+zipcodes_df = rename_columns(
+    data=zipcodes_df,
+    columns_to_rename={
+        "geolocation_zip_code_prefix": "cat_geolocation_zip_code_prefix",
+        "geolocation_lat": "num_geolocation_lat",
+        "geolocation_lng": "num_geolocation_lng",
+        "geolocation_city": "cat_geolocation_city",
+        "geolocation_state": "cat_geolocation_state",
+    },
     log=log,
 )
 
@@ -88,22 +122,10 @@ zipcodes_df = load_dataframe_from_csv(
 # Pré-processamento de dados
 # ==================================================================================
 
-log.title("Removing duplicates from items dataset")
-items_df = items_df.drop_duplicates(subset=["order_id", "order_item_id"], keep="first")
-log.info(f"Dataframe shape after removing duplicates: {items_df.shape[0]} rows")
-
-log.title("Removing duplicates from products dataset")
-products_df = products_df.drop_duplicates(subset=["product_id"], keep="first")
-log.info(f"Dataframe shape after removing duplicates: {products_df.shape[0]} rows")
-
-log.title("Removing duplicates from products dataset")
-sellers_df = sellers_df.drop_duplicates(subset=["seller_id"], keep="first")
-log.info(f"Dataframe shape after removing duplicates: {sellers_df.shape[0]} rows")
-
 log.title("Removing duplicates from geolocation dataset")
-zipcodes_df = zipcodes_df.drop_duplicates(subset=["geolocation_zip_code_prefix"])
+zipcodes_df = zipcodes_df.drop_duplicates(subset=["cat_geolocation_zip_code_prefix"])
 log.info(f"Dataframe shape after removing duplicates: {zipcodes_df.shape[0]} rows")
-zipcodes_df = zipcodes_df.add_suffix("_seller")
+zipcodes_df = zipcodes_df.add_suffix("_customer")
 
 # ==================================================================================
 # Regras de negócio
@@ -111,25 +133,14 @@ zipcodes_df = zipcodes_df.add_suffix("_seller")
 
 log.title("Applying business rules")
 
-log.info("Merging items with products...")
+log.info("Merging orders with customers...")
 data_df = pd.merge(
-    items_df,
-    products_df,
+    orders_df,
+    customer_df,
     how="left",
-    left_on="product_id",
-    right_on="product_id",
-    validate="many_to_one",
-)
-log.info(f"Dataframe shape after merging: {data_df.shape}")
-
-log.info("Merging items with sellers...")
-data_df = pd.merge(
-    data_df,
-    sellers_df,
-    how="left",
-    left_on="seller_id",
-    right_on="seller_id",
-    validate="many_to_one",
+    left_on="cat_customer_id",
+    right_on="cat_customer_id",
+    validate="one_to_one",
 )
 log.info(f"Dataframe shape after merging: {data_df.shape}")
 
@@ -138,10 +149,11 @@ data_df = pd.merge(
     data_df,
     zipcodes_df,
     how="left",
-    left_on="seller_zip_code_prefix",
-    right_on="geolocation_zip_code_prefix_seller",
+    left_on="cat_customer_zip_code_prefix",
+    right_on="cat_geolocation_zip_code_prefix_customer",
     validate="many_to_one",
 )
+data_df = data_df.drop(columns=["cat_geolocation_zip_code_prefix_customer"])
 log.info(f"Dataframe shape after merging: {data_df.shape}")
 
 # ==================================================================================
@@ -150,11 +162,21 @@ log.info(f"Dataframe shape after merging: {data_df.shape}")
 
 log.title("Saving output artifacts")
 
+log.subtitle("Casting columns to appropriate types")
+data_df = cast_columns_type_by_prefix(
+    data=data_df,
+    log=log,
+)
+
+log.subtitle("Saving dataframe to file")
 save_dataframe_to_parquet(
     data=data_df,
     file_path=output_dataset_file_path,
     log=log,
 )
+
+print("Tipos das colunas do dataframe:")
+print(data_df.dtypes)
 
 # ==================================================================================
 # Encerramento do script

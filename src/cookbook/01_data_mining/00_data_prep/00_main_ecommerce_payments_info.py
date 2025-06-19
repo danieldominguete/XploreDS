@@ -1,10 +1,5 @@
 """
-Xplore DS :: Build Target for Ecommerce Dataset
-
-Classificacao Binaria = "Review Positiva" ou "Review Negativa"
-Classificacao Multiclasse = 0 a 5
-Predicao de Regressao = "Nota da Review"
-
+Xplore DS :: Build Raw Data for Ecommerce Dataset
 """
 
 # Importando bibliotecas nativas
@@ -49,12 +44,15 @@ log.init_run()
 
 log.title("Script setup")
 
+
 # Configuracao de dados de entrada
 input_dataset_file_path_separator = ","
-input_reviews_file_path = "data/ecommerce/raw/olist_order_reviews_dataset.csv"
+input_payments_file_path = "data/ecommerce/raw/olist_order_payments_dataset.csv"
 
 # Configuracao de dados de saida
-output_dataset_file_path = "data/ecommerce/stage/olist_review_target_dataset.parquet"
+output_dataset_file_path = (
+    "data/ecommerce/curated/olist_payments_curated_dataset.parquet"
+)
 
 # ==================================================================================
 # Carregando base de dados
@@ -62,37 +60,22 @@ output_dataset_file_path = "data/ecommerce/stage/olist_review_target_dataset.par
 
 log.title("Loading datasets")
 
-reviews_df = load_dataframe_from_csv(
-    filepath=input_reviews_file_path,
+payments_df = load_dataframe_from_csv(
+    file_path=input_payments_file_path,
     separator=input_dataset_file_path_separator,
-    selected_columns=[
-        "order_id",
-        "review_score",
-    ],
     log=log,
 )
 
 # ==================================================================================
 # Pré-processamento de dados
 # ==================================================================================
-log.title("Preprocessing datasets")
 
-log.subtitle("Removing duplicates")
-
-log.info("Removing duplicates from reviews dataset")
-reviews_df = reviews_df.drop_duplicates(subset=["order_id"], keep="first")
-log.info(f"Dataframe shape after removing duplicates: {reviews_df.shape[0]} rows")
-
-log.subtitle("Rename columns")
-
-reviews_df = rename_columns(
-    data=reviews_df,
-    columns_to_rename={
-        "order_id": "txt_order_id",
-        "review_score": "num_review_score",
-    },
-    log=log,
+log.title("Removing duplicates from payments dataset")
+payments_df = payments_df.drop_duplicates(
+    subset=["order_id", "payment_sequential"], keep="first"
 )
+log.info(f"Dataframe shape after removing duplicates: {payments_df.shape[0]} rows")
+
 
 # ==================================================================================
 # Regras de negócio
@@ -100,29 +83,6 @@ reviews_df = rename_columns(
 
 log.title("Applying business rules")
 
-reviews_df["txt_review_binary"] = reviews_df["num_review_score"].apply(
-    lambda x: "Review Positiva" if x >= 4 else "Review Negativa"
-)
-
-reviews_df["txt_review_multiclass"] = reviews_df["num_review_score"].apply(
-    lambda x: (
-        "Review 5"
-        if x == 5
-        else (
-            "Review 4"
-            if x == 4
-            else (
-                "Review 3"
-                if x == 3
-                else (
-                    "Review 2"
-                    if x == 2
-                    else "Review 1" if x == 1 else "Review Desconhecida"
-                )
-            )
-        )
-    )
-)
 
 # ==================================================================================
 # Salvando artefatos de saida
@@ -136,9 +96,8 @@ cast_columns_type_by_prefix(
     log=log,
 )
 
-log.subtitle("Saving dataframe")
 save_dataframe_to_parquet(
-    data=reviews_df,
+    data=payments_df,
     file_path=output_dataset_file_path,
     log=log,
 )

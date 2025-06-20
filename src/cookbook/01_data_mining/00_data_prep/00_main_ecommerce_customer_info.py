@@ -62,14 +62,14 @@ output_dataset_file_path = (
 
 log.title("Loading datasets")
 
-orders_df = load_dataframe_from_csv(
+orders = load_dataframe_from_csv(
     file_path=input_orders_file_path,
     separator=input_dataset_file_path_separator,
     log=log,
 )
 
-orders_df = rename_columns(
-    data=orders_df,
+orders = rename_columns(
+    data=orders,
     columns_to_rename={
         "order_id": "cat_order_id",
         "customer_id": "cat_customer_id",
@@ -83,13 +83,13 @@ orders_df = rename_columns(
     log=log,
 )
 
-customer_df = load_dataframe_from_csv(
+customer = load_dataframe_from_csv(
     file_path=input_customers_file_path,
     separator=input_dataset_file_path_separator,
     log=log,
 )
-customer_df = rename_columns(
-    data=customer_df,
+customer = rename_columns(
+    data=customer,
     columns_to_rename={
         "customer_id": "cat_customer_id",
         "customer_unique_id": "cat_customer_unique_id",
@@ -100,14 +100,14 @@ customer_df = rename_columns(
     log=log,
 )
 
-zipcodes_df = load_dataframe_from_csv(
+zipcodes = load_dataframe_from_csv(
     file_path=input_zipcodes_file_path,
     separator=input_dataset_file_path_separator,
     log=log,
 )
 
-zipcodes_df = rename_columns(
-    data=zipcodes_df,
+zipcodes = rename_columns(
+    data=zipcodes,
     columns_to_rename={
         "geolocation_zip_code_prefix": "cat_geolocation_zip_code_prefix",
         "geolocation_lat": "num_geolocation_lat",
@@ -123,9 +123,9 @@ zipcodes_df = rename_columns(
 # ==================================================================================
 
 log.title("Removing duplicates from geolocation dataset")
-zipcodes_df = zipcodes_df.drop_duplicates(subset=["cat_geolocation_zip_code_prefix"])
-log.info(f"Dataframe shape after removing duplicates: {zipcodes_df.shape[0]} rows")
-zipcodes_df = zipcodes_df.add_suffix("_customer")
+zipcodes = zipcodes.drop_duplicates(subset=["cat_geolocation_zip_code_prefix"])
+log.info(f"Dataframe shape after removing duplicates: {zipcodes.shape[0]} rows")
+zipcodes = zipcodes.add_suffix("_customer")
 
 # ==================================================================================
 # Regras de negócio
@@ -134,27 +134,27 @@ zipcodes_df = zipcodes_df.add_suffix("_customer")
 log.title("Applying business rules")
 
 log.info("Merging orders with customers...")
-data_df = pd.merge(
-    orders_df,
-    customer_df,
+data = pd.merge(
+    orders,
+    customer,
     how="left",
     left_on="cat_customer_id",
     right_on="cat_customer_id",
     validate="one_to_one",
 )
-log.info(f"Dataframe shape after merging: {data_df.shape}")
+log.info(f"Dataframe shape after merging: {data.shape}")
 
 log.info("Merging with geolocation...")
-data_df = pd.merge(
-    data_df,
-    zipcodes_df,
+data = pd.merge(
+    data,
+    zipcodes,
     how="left",
     left_on="cat_customer_zip_code_prefix",
     right_on="cat_geolocation_zip_code_prefix_customer",
     validate="many_to_one",
 )
-data_df = data_df.drop(columns=["cat_geolocation_zip_code_prefix_customer"])
-log.info(f"Dataframe shape after merging: {data_df.shape}")
+data = data.drop(columns=["cat_geolocation_zip_code_prefix_customer"])
+log.info(f"Dataframe shape after merging: {data.shape}")
 
 # ==================================================================================
 # Salvando artefatos de saida
@@ -163,20 +163,17 @@ log.info(f"Dataframe shape after merging: {data_df.shape}")
 log.title("Saving output artifacts")
 
 log.subtitle("Casting columns to appropriate types")
-data_df = cast_columns_type_by_prefix(
-    data=data_df,
+data = cast_columns_type_by_prefix(
+    data=data,
     log=log,
 )
 
 log.subtitle("Saving dataframe to file")
 save_dataframe_to_parquet(
-    data=data_df,
+    data=data,
     file_path=output_dataset_file_path,
     log=log,
 )
-
-print("Tipos das colunas do dataframe:")
-print(data_df.dtypes)
 
 # ==================================================================================
 # Encerramento do script

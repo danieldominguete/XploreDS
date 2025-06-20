@@ -6,6 +6,12 @@
 # Data files
 *.csv
 *.parquet
+*.sqlite3
+*.db
+*.xlsx
+*.xls
+*.faiss
+*.bin
 
 # Models files
 *.joblib

@@ -1,5 +1,6 @@
 """
-Xplore DS :: General cookbook script template
+Xplore DS :: General cookbook for FAISS vector database
+
 """
 
 # Importando bibliotecas nativas
@@ -7,7 +8,10 @@ import sys
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-
+from langchain_community.document_loaders import TextLoader
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import OllamaEmbeddings
+from langchain_text_splitters import CharacterTextSplitter
 
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib
 project_folder = Path(__file__).resolve().parents[5]
@@ -44,15 +48,12 @@ log.init_run()
 log.title("Script setup")
 
 # Configuracao de dados de entrada
-input_file_path = "data/projects/raw/tabular_data/wine_quality/winequality-red.csv"
-input_file_path_separator = ","
+input_file_path = "data/tutorial/txt/speech.txt"
 
 # Parametros de operacao
-proportion_test_samples = 0.1
-shuffle = False
 
 # Configuracao de dados de saida
-output_file_path = "data/projects/stage/wine_quality/wine_quality_train.parquet"
+output_file_path = "data/tutorial/faiss_vector_db/speech_faiss_vector_db"
 
 # ==================================================================================
 # Carregando base de dados
@@ -60,15 +61,63 @@ output_file_path = "data/projects/stage/wine_quality/wine_quality_train.parquet"
 
 log.title("Loading datasets")
 
+loader = TextLoader(input_file_path, encoding="utf-8")
+documents = loader.load()
+text_splitter = CharacterTextSplitter(
+    chunk_size=1000, chunk_overlap=100, length_function=len
+)
+texts = text_splitter.split_documents(documents)
+
 # ==================================================================================
 # Pré-processamento dos dados
 # ==================================================================================
 log.title("Applying preprocessing steps")
 
+embedding_model = OllamaEmbeddings(model="llama3.2")
+db = FAISS.from_documents(texts, embedding_model)
+
 # ==================================================================================
 # Regras de negócio
 # ==================================================================================
 log.title("Applying business rules")
+
+query = "What is the main topic of the speech?"
+
+# Usando similarity search para encontrar o documento mais relevante
+log.info("Performing similarity search")
+docs = db.similarity_search(query, k=1)
+log.info(f"Query: {query}")
+for doc in docs:
+    log.info(f"Document: {doc.page_content}")
+    log.info(f"Metadata: {doc.metadata}")
+
+# Usando retrieval para buscar o documento mais relevante
+log.info("Performing retrieval")
+retriever = db.as_retriever()
+docs = retriever.invoke(query)
+log.info(f"Query: {query}")
+for doc in docs:
+    log.info(f"Document: {doc.page_content}")
+    log.info(f"Metadata: {doc.metadata}")
+
+# Usando similarity search com score
+log.info("Performing similarity search with score")
+docs_with_score = db.similarity_search_with_score(query, k=1)
+log.info(f"Query: {query}")
+for doc, score in docs_with_score:
+    log.info(f"Document: {doc.page_content}")
+    log.info(f"Metadata: {doc.metadata}")
+    log.info(f"Score: {score}")
+
+# Buscando pelo embedding de uma consulta
+log.info("Performing similarity search with embedding")
+input_embedding = embedding_model.embed_query(query)
+docs = db.similarity_search_by_vector(input_embedding, k=1)
+log.info(f"Query: {query}")
+for doc in docs:
+    log.info(f"Document: {doc.page_content}")
+    log.info(f"Metadata: {doc.metadata}")
+
 
 # ==================================================================================
 # Salvando artefatos de saida
@@ -76,18 +125,18 @@ log.title("Applying business rules")
 
 log.title("Saving output artifacts")
 
-log.subtitle("Casting columns to appropriate types")
-data = cast_columns_type_by_prefix(
-    data=data,
-    log=log,
+db.save_local(
+    output_file_path,
 )
 
-log.subtitle("Saving dataframe to file")
-save_dataframe_to_parquet(
-    data=data,
-    file_path=output_file_path,
-    log=log,
+new_db = FAISS.load_local(
+    output_file_path,
+    embedding_model,
+    allow_dangerous_deserialization=True,
 )
+log.info("Verifying if the saved database can be loaded correctly")
+assert new_db is not None, "Failed to load the saved FAISS vector database."
+log.info("FAISS vector database loaded successfully from the saved file.")
 
 # ==================================================================================
 # Encerramento do script

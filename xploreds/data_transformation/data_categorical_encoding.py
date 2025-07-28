@@ -1,5 +1,5 @@
 """
-Xplore DS :: Encoding Variables
+Xplore DS :: Encoding Categorical Variables
 """
 
 import pandas as pd

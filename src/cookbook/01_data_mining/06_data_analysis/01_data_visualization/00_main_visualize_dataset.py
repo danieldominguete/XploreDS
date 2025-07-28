@@ -25,6 +25,7 @@ from xploreds.data_visualization.data_viz_plotly import (
 )
 from xploreds.data_handler.missing import normalize_not_valid_values
 
+
 # ==================================================================================
 # Setup do script
 
@@ -48,12 +49,12 @@ log.title("Script setup")
 
 # Configuracao de dados de entrada
 input_dataset_file_path = (
-    "data/ecommerce/curated/olist_customer_curated_dataset.parquet"
+    "data/ecommerce/stage/olist_orders_feature_book_dataset.parquet"
 )
 
 # Configuracao de dados de saida
 view_plots = True
-save_plots = True
+save_plots = False
 
 # ==================================================================================
 # Carregando base de dados

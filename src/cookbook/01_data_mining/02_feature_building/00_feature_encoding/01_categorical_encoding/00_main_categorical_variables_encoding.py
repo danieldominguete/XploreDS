@@ -24,7 +24,9 @@ from xploreds.data_schemas.model_io_config import (
     VariableConfig,
     EncodingMethod,
 )
-from xploreds.data_transformation.data_encoding import encoder_variable_fit_transform
+from xploreds.data_transformation.data_categorical_encoding import (
+    encoder_variable_fit_transform,
+)
 
 # ==================================================================================
 # Setup do script

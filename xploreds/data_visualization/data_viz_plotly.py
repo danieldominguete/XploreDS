@@ -11,6 +11,7 @@ import os
 import numpy as np
 import pandas as pd
 
+
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib
 project_folder = Path(__file__).resolve().parents[2]
 sys.path.append(str(project_folder))

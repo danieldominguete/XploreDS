@@ -105,7 +105,7 @@ def cast_columns_type_by_prefix(data: pd, log=None) -> pd:
             if log is not None:
                 log.info(f"Casting column '{column}' to string type...")
             data[column] = data[column].astype("string")
-        if column.startswith("cat_"):
+        elif column.startswith("cat_"):
             if log is not None:
                 log.info(f"Casting column '{column}' to string type...")
             data[column] = data[column].astype("string")
@@ -113,11 +113,11 @@ def cast_columns_type_by_prefix(data: pd, log=None) -> pd:
             if log is not None:
                 log.info(f"Casting column '{column}' to numeric type...")
             data[column] = data[column].astype("float64")
-        elif column.startswith("dt_"):
+        elif column.startswith("dta_"):
             if log is not None:
                 log.info(f"Casting column '{column}' to date type...")
             data[column] = pd.to_datetime(data[column]).dt.date
-        elif column.startswith("ts_"):
+        elif column.startswith("tsp_"):
             if log is not None:
                 log.info(f"Casting column '{column}' to datetime type...")
             data[column] = pd.to_datetime(data[column])

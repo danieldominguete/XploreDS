@@ -1,16 +1,22 @@
 """
-Xplore DS :: General cookbook script template
+Xplore DS :: Build Target for Ecommerce Dataset
+
+Classificacao Binaria = "Review Positiva" ou "Review Negativa"
+Classificacao Multiclasse = 0 a 5
+Predicao de Regressao = "Nota da Review"
+
 """
 
 # Importando bibliotecas nativas
 import sys
 import os
+import pandas as pd
 from pathlib import Path
 from dotenv import load_dotenv
 
 
 # Configurando path para raiz do projeto e setup de reconhecimento da pasta da lib
-project_folder = Path(__file__).resolve().parents[5]
+project_folder = Path(__file__).resolve().parents[4]
 sys.path.append(str(project_folder))
 
 # Importando biblioteca Xplore DS
@@ -18,9 +24,10 @@ from xploreds.environment.environment import XploreDSLocalhost
 from xploreds.environment.logging import XploreDSLogging
 from xploreds.data_handler.file import (
     load_dataframe_from_csv,
+    load_dataframe_from_parquet,
     save_dataframe_to_parquet,
 )
-from xploreds.data_handler.dataframe import cast_columns_type_by_prefix
+from xploreds.data_handler.dataframe import rename_columns, cast_columns_type_by_prefix
 
 # ==================================================================================
 # Setup do script
@@ -44,19 +51,10 @@ log.init_run()
 log.title("Script setup")
 
 # Configuracao de dados de entrada
-input_file_path = "data/projects/raw/tabular_data/wine_quality/winequality-red.csv"
-input_file_path_separator = ","
-
-# Parametros de operacao
-proportion_test_samples = 0.1
-shuffle = False
+input_reviews_file_path = "data/ecommerce/curated/olist_reviews_curated_dataset.parquet"
 
 # Configuracao de dados de saida
-output_file_path = "data/projects/stage/wine_quality/wine_quality_train.parquet"
-
-# ==================================================================================
-# Funcoes auxiliares
-
+output_dataset_file_path = "data/ecommerce/stage/olist_review_target_dataset.parquet"
 
 # ==================================================================================
 # Carregando base de dados
@@ -64,15 +62,66 @@ output_file_path = "data/projects/stage/wine_quality/wine_quality_train.parquet"
 
 log.title("Loading datasets")
 
+reviews_df = load_dataframe_from_parquet(
+    file_path=input_reviews_file_path,
+    selected_columns=[
+        "order_id",
+        "review_score",
+    ],
+    log=log,
+)
+
 # ==================================================================================
-# Pré-processamento dos dados
+# Pré-processamento de dados
 # ==================================================================================
-log.title("Applying preprocessing steps")
+log.title("Preprocessing datasets")
+
+log.subtitle("Removing duplicates")
+
+log.info("Removing duplicates from reviews dataset")
+reviews_df = reviews_df.drop_duplicates(subset=["order_id"], keep="first")
+log.info(f"Dataframe shape after removing duplicates: {reviews_df.shape[0]} rows")
+
+log.subtitle("Rename columns")
+
+reviews_df = rename_columns(
+    data=reviews_df,
+    columns_to_rename={
+        "order_id": "cat_order_id",
+        "review_score": "num_review_score",
+    },
+    log=log,
+)
 
 # ==================================================================================
 # Regras de negócio
 # ==================================================================================
+
 log.title("Applying business rules")
+
+reviews_df["cat_review_binary"] = reviews_df["num_review_score"].apply(
+    lambda x: "Review Positiva" if x >= 4 else "Review Negativa"
+)
+
+reviews_df["cat_review_multiclass"] = reviews_df["num_review_score"].apply(
+    lambda x: (
+        "Review 5"
+        if x == 5
+        else (
+            "Review 4"
+            if x == 4
+            else (
+                "Review 3"
+                if x == 3
+                else (
+                    "Review 2"
+                    if x == 2
+                    else "Review 1" if x == 1 else "Review Desconhecida"
+                )
+            )
+        )
+    )
+)
 
 # ==================================================================================
 # Salvando artefatos de saida
@@ -81,15 +130,15 @@ log.title("Applying business rules")
 log.title("Saving output artifacts")
 
 log.subtitle("Casting columns to appropriate types")
-data = cast_columns_type_by_prefix(
-    data=data,
+reviews_df = cast_columns_type_by_prefix(
+    data=reviews_df,
     log=log,
 )
 
-log.subtitle("Saving dataframe to file")
+log.subtitle("Saving dataframe")
 save_dataframe_to_parquet(
-    data=data,
-    file_path=output_file_path,
+    data=reviews_df,
+    file_path=output_dataset_file_path,
     log=log,
 )
 

@@ -1,0 +1,36 @@
+---
+description: Data Science instructions
+alwaysApply: false
+---
+
+# Data Pre-Processing
+
+# Feature Engineering
+
+
+# MLOps
+
+## Stack
+
+MLflow (tracking/registry), BentoML ou FastAPI para serving, AWS SageMaker quando em cloud
+
+## Experiment tracking
+
+- Logar hiperparâmetros, métricas e artefatos em toda execução de treino
+- Versionar datasets de input quando possível (hash ou MLflow datasets)
+
+## Deploy (`03_MLOps/04_deploy/`)
+
+- Separar código de treino (`00_training/`) e inferência (`01_inference/`)
+- API de inferência stateless; validar input (Pydantic)
+- Containerizar com Dockerfile; pin de versões de dependências
+
+## Monitoramento e auditoria
+
+- Alertas quando métricas saem de faixa aceitável
+
+## Segurança
+
+- Nunca commitar `.env`, chaves API ou tokens
+- Sanitizar inputs na inferência
+- Modelos e dados sensíveis fora do git (S3, MLflow artifact store)

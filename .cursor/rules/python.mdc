@@ -1,0 +1,80 @@
+---
+description: Padrões Python para o projeto XploreDS
+globs: **/*.py
+alwaysApply: false
+---
+
+# Python — XploreDS
+
+## Estrutura
+
+- Pacote em `xploreds/`; cookbook em `src/cookbook/`
+- Testes em `tests/` espelhando a árvore de `xploreds/`
+- Configuração central em `pyproject.toml` (uv)
+
+## Estilo
+
+- PEP 8 + Black (88 caracteres, aspas duplas)
+- `snake_case` para funções/variáveis; `PascalCase` para classes
+- Imports: stdlib → third-party → local (isort)
+- Preferir `pathlib.Path` a strings de caminho
+
+## Type hints
+
+- Anotar parâmetros e retornos em funções públicas
+- `Optional[T]` para compatibilidade; `collections.abc` para interfaces
+- `dataclasses` ou Pydantic para estruturas de dados
+
+## Documentação de funções
+
+Toda função pública em `xploreds/` deve ter docstring **Google style** com:
+
+- Resumo em uma linha
+- `Args` — parâmetros e tipos aceitos
+- `Returns` — quando aplicável
+- `Raises` — exceções esperadas
+- `Note` ou `Example` — premissas, dependências ou uso não óbvio
+
+Funções privadas (`_prefix`) podem ter docstring de uma linha.
+
+Comentários inline (`#`) apenas para lógica não óbvia — preferir docstring para contrato da API.
+
+Ao criar ou refatorar funções, **sempre** adicionar ou atualizar a docstring.
+
+Referência de estilo: `xploreds/io/xds_file.py`, `xploreds/log/xds_log.py`.
+
+```python
+def convert_bytes(size_bytes: int | float, to_unit: str = "GB") -> float:
+    """Convert a byte count to the requested binary unit.
+
+    Args:
+        size_bytes: Size in bytes.
+        to_unit: Target unit (B, KB, MB, GB, or TB).
+
+    Returns:
+        Size expressed in the requested unit.
+
+    Raises:
+        ValueError: When ``to_unit`` is not supported.
+    """
+```
+
+## Boas práticas
+
+- Sem `bare except`; capturar exceções específicas
+- `logging` em vez de `print` em código de produção
+- Context managers para arquivos e conexões
+- Funções focadas; módulos com menos de 500 linhas
+
+## Versionamento
+
+- Usar `cz commit` para commits (Conventional Commits)
+- Usar `cz bump` para releases semânticas (atualiza versão, CHANGELOG e tag)
+- Não commitar com `git commit -m` direto — o hook valida o formato da mensagem
+
+## Dependências
+
+- Adicionar com `uv add <pacote>`
+- Separar dependências de dev (`uv add --dev pytest ruff mypy`)
+
+

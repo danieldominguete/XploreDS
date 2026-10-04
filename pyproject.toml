@@ -19,6 +19,7 @@ dependencies = [
 dev = [
     "commitizen>=4.6",
     "ipykernel>=6.29",
+    "nbstripout>=0.9.1",
     "pre-commit>=4.0",
     "pytest>=8.0",
 ]

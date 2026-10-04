@@ -47,6 +47,15 @@ Se usar o play simples (sem dropdown), abra **View → Output** e selecione **Py
 - Arquivo `.env` na raiz (copie de `.env.example`)
 - Aba **Terminal** visivel (nao confundir com **Output** ou **Debug Console**)
 
+## Notebooks (`.ipynb`)
+
+O hook **nbstripout** (pre-commit) remove outputs de notebooks antes de cada commit.
+
+```bash
+uv run pre-commit install
+uv run pre-commit run nbstripout --all-files
+```
+
 ## uv — desenvolvimento local
 
 O `uv sync` instala dependencias externas **e** o pacote `xploreds` em modo **editavel**.

@@ -29,10 +29,25 @@ uv sync --all-groups
 
 Isso cria `.venv/`, instala libs externas e registra `xploreds` em modo editavel apontando para `src/xploreds/`.
 
-### 3. Hooks de commit (Commitizen)
+### 3. Hooks de commit
 
 ```bash
-uv run pre-commit install --hook-type commit-msg
+uv run pre-commit install                  # nbstripout — limpa outputs de .ipynb
+uv run pre-commit install --hook-type commit-msg  # Commitizen — valida mensagens
+```
+
+Notebooks versionados devem ir **sem outputs** (celulas de codigo/markdown ok). O hook `nbstripout` remove outputs automaticamente antes de cada commit.
+
+Limpar manualmente, se necessario:
+
+```bash
+uv run nbstripout $(git ls-files '*.ipynb')
+```
+
+Validar sem alterar arquivos:
+
+```bash
+uv run nbstripout --verify $(git ls-files '*.ipynb')
 ```
 
 ### 4. Validar setup

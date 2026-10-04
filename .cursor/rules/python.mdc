@@ -8,8 +8,8 @@ alwaysApply: false
 
 ## Estrutura
 
-- Pacote em `xploreds/`; cookbook em `src/cookbook/`
-- Testes em `tests/` espelhando a árvore de `xploreds/`
+- Pacote em `src/xploreds/`; cookbook em `cookbook/`
+- Testes em `tests/` espelhando a árvore de `src/xploreds/`
 - Configuração central em `pyproject.toml` (uv)
 
 ## Estilo
@@ -27,7 +27,7 @@ alwaysApply: false
 
 ## Documentação de funções
 
-Toda função pública em `xploreds/` deve ter docstring **Google style** com:
+Toda função pública em `src/xploreds/` deve ter docstring **Google style** com:
 
 - Resumo em uma linha
 - `Args` — parâmetros e tipos aceitos
@@ -41,7 +41,7 @@ Comentários inline (`#`) apenas para lógica não óbvia — preferir docstring
 
 Ao criar ou refatorar funções, **sempre** adicionar ou atualizar a docstring.
 
-Referência de estilo: `xploreds/io/xds_file.py`, `xploreds/log/xds_log.py`.
+Referência de estilo: `src/xploreds/io/xds_file.py`, `src/xploreds/log/xds_log.py`.
 
 ```python
 def convert_bytes(size_bytes: int | float, to_unit: str = "GB") -> float:

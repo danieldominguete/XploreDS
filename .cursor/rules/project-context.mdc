@@ -9,18 +9,19 @@ Biblioteca e cookbook de Data Science em Python.
 
 ## Estrutura do repositório
 
-- `xploreds/` — pacote Python reutilizável (biblioteca)
-- `src/cookbook/` — exemplos e receitas organizadas por etapa do pipeline
+- `src/xploreds/` — biblioteca publicável (PyPI), instalada em modo editável via `uv sync`
+- `cookbook/` — scripts e receitas locais (não publica)
+- `tests/` — pytest espelhando módulos de `src/xploreds/`
 - `data/` — datasets locais (não versionar dados sensíveis ou grandes)
 - `references/` — material de estudo externo (somente leitura; não editar)
 - `static/` — assets estáticos (figuras, templates)
+- `docs/` — documentação técnica do projeto
 
 ## Ferramentas
 
 - **uv** para dependências e ambientes — nunca sugerir `pip install` ou `requirements.txt`
-- Configuração em `pyproject.toml`
+- Configuração em `pyproject.toml` + build com **hatchling** (`uv build` / `uv publish`)
 - **Commitizen** para versionamento semântico (`cz commit`, `cz bump`)
-- Layout `src/` para o pacote instalável
 
 ## Princípios
 

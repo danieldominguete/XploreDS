@@ -1,73 +1,75 @@
 # XploreDS
 
-Library and cookbook codes for Data Science Projects
+Library and cookbook codes for Data Science Projects.
+
+## Estrutura
+
+```
+src/xploreds/   → biblioteca (publicavel no PyPI)
+cookbook/       → scripts e receitas locais
+tests/          → testes automatizados
+```
 
 ## Environment Setup
 
-1. Install UV
+Este projeto usa **[uv](https://docs.astral.sh/uv/)** para ambientes e dependencias.
+Nao use `requirements.txt` nem `pip install` — tudo fica em `pyproject.toml` + `uv.lock`.
+
+### 1. Instalar uv
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
-uv run cz commit    # em vez de git commit -m
 ```
 
-2. Install dependencies
+### 2. Instalar dependencias (modo editavel)
 
 ```bash
-uv sync --group dev
+uv sync --all-groups
 ```
 
-3. Install commit hooks (validates Conventional Commits)
+Isso cria `.venv/`, instala libs externas e registra `xploreds` em modo editavel apontando para `src/xploreds/`.
+
+### 3. Hooks de commit (Commitizen)
 
 ```bash
 uv run pre-commit install --hook-type commit-msg
 ```
 
-## Versionamento semântico (Commitizen)
+### 4. Validar setup
 
-Este projeto usa [Conventional Commits](https://www.conventionalcommits.org/) e [Commitizen](https://commitizen-tools.github.io/commitizen/) para versionamento semântico.
+```bash
+uv run pytest
+uv run python static/00_templates/script.py
+```
+
+## Versionamento semantico (Commitizen)
 
 ### Commits
 
-Use o assistente interativo em vez de `git commit -m`:
-
 ```bash
+git add .
 uv run cz commit
 ```
-
-Tipos comuns:
 
 | Tipo | Quando usar | Bump |
 |------|-------------|------|
 | `feat` | Nova funcionalidade | minor |
-| `fix` | Correção de bug | patch |
-| `docs` | Documentação | — |
-| `refactor` | Refatoração | patch |
+| `fix` | Correcao de bug | patch |
+| `docs` | Documentacao | — |
+| `refactor` | Refatoracao | patch |
 | `test` | Testes | — |
-| `chore` | Manutenção | — |
+| `chore` | Manutencao | — |
 
-Breaking change: adicione `!` após o escopo (`feat(api)!: ...`) ou `BREAKING CHANGE:` no corpo.
-
-### Release
-
-Gera nova versão, atualiza `CHANGELOG.md`, `pyproject.toml`, `uv.lock` e cria tag Git:
+### Release e publicacao
 
 ```bash
-uv run cz bump
+uv run cz bump          # bump de versao + CHANGELOG + tag
+uv build                # gera dist/*.whl
+uv publish              # publica no PyPI (quando configurado)
 ```
 
-Pré-visualizar próxima versão:
-
-```bash
-uv run cz bump --dry-run
-```
-
-Na primeira release (sem tags Git ainda), confirme com `--yes`:
+Na primeira release (sem tags Git), use `--yes`:
 
 ```bash
 uv run cz bump --yes
 ```
-
-### Versão atual
-
-A versão canônica fica em `pyproject.toml` (`project.version`) e é espelhada em `xploreds/__init__.py`.

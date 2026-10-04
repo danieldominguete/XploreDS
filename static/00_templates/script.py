@@ -1,11 +1,12 @@
 """
 Xplore DS :: Cookbook Script Template
 
-Standard pipeline template for scripts under ``src/cookbook/``.
+Standard pipeline template for scripts under ``cookbook/``.
 
 Author: daniel.dominguet@gmail.com
 """
 
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -114,6 +115,9 @@ def save_output_artifacts(log: XploreDSLogging) -> None:
 
 def main() -> None:
     """Execute the cookbook script pipeline."""
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(line_buffering=True)
+
     script_path = Path(__file__).resolve()
     project_root = resolve_project_root(script_path.parent)
 

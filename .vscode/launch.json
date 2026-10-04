@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: arquivo atual (terminal)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      },
+      "justMyCode": true
+    },
+    {
+      "name": "XploreDS: script template",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/static/00_templates/script.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      },
+      "justMyCode": true
+    }
+  ]
+}

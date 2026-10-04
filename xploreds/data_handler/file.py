@@ -174,10 +174,6 @@ def create_folder(folder_path: str) -> bool:
         os.makedirs(folder_path)
         return True
 
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-        return True
-
 
 def get_name_and_extension_from_file(filename: str) -> list:
     """

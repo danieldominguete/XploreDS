@@ -16,10 +16,10 @@
       "justMyCode": true
     },
     {
-      "name": "XploreDS: script template",
+      "name": "XploreDS: reciple_script",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/static/00_templates/script.py",
+      "program": "${workspaceFolder}/static/00_templates/reciple_script.py",
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}",
       "envFile": "${workspaceFolder}/.env",

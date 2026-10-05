@@ -20,32 +20,15 @@ Arquivos em `.vscode/`:
 |---------|-----|
 | `launch.json` | Debug (F5) no **Terminal integrado** |
 | `settings.json` | Interpretador `.venv`, `.env` automatico |
-| `tasks.json` | **Run Python File in Terminal** via `Cmd+Shift+B` |
+| `tasks.json` | Rodar script no terminal via **Cmd+Shift+B** |
 
-### Onde a saida aparece
+Para executar scripts Python com logs no terminal, use **Cmd+Shift+B** ou:
 
-| Acao na IDE | Onde ver a saida |
-|-------------|------------------|
-| ▶ **Run Python File** (play simples) | Painel **Output → Python** (nao no Terminal) |
-| ▶ **Run Python File in Terminal** (dropdown do play) | **Terminal** integrado |
-| **F5** Debug | **Terminal** integrado (`launch.json`) |
-| **Cmd+F5** Run Without Debugging | **Terminal** integrado (`launch.json`) |
-| **Cmd+Shift+B** | **Terminal** integrado (`tasks.json`) |
+```bash
+uv run python static/00_templates/reciple_script.py
+```
 
-### Como rodar e ver logs no Terminal
-
-1. **Recomendado:** abra `static/00_templates/script.py` e pressione **Cmd+F5** (Run Without Debugging).
-2. Alternativa: **Cmd+Shift+B** (task padrao "Run Python File in Terminal").
-3. Alternativa: clique na **seta do botao play** → **Run Python File in Terminal**.
-4. Pelo terminal manual: `uv run python static/00_templates/script.py`.
-
-Se usar o play simples (sem dropdown), abra **View → Output** e selecione **Python** no dropdown — a saida esta la, nao no Terminal.
-
-### Checklist se o Terminal continuar vazio
-
-- Interpretador: **Python: Select Interpreter** → `.venv/bin/python`
-- Arquivo `.env` na raiz (copie de `.env.example`)
-- Aba **Terminal** visivel (nao confundir com **Output** ou **Debug Console**)
+Os logs tambem sao gravados em `runs/<script>_<timestamp>/`.
 
 ## Notebooks (`.ipynb`)
 

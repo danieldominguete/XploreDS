@@ -14,6 +14,8 @@ import pandas as pd
 
 PathLike = Union[str, Path]
 
+_PARQUET_SUFFIX = ".parquet"
+
 
 def _as_path(path: PathLike) -> Path:
     """Normalize a path-like value to ``Path``."""
@@ -26,6 +28,14 @@ def _ensure_parent_dir(file_path: PathLike) -> None:
     # Ignora caminhos relativos na raiz (ex.: "arquivo.json")
     if parent != Path("."):
         parent.mkdir(parents=True, exist_ok=True)
+
+
+def _resolve_parquet_path(file_path: PathLike) -> Path:
+    """Normalize a path, appending ``.parquet`` when the suffix is missing."""
+    path = _as_path(file_path)
+    if path.suffix.lower() != _PARQUET_SUFFIX:
+        path = path.with_suffix(_PARQUET_SUFFIX)
+    return path
 
 
 def _log_dataframe_summary(logger: logging.Logger, data: pd.DataFrame) -> None:
@@ -169,6 +179,8 @@ def save_dataframe_to_parquet(
     data: pd.DataFrame,
     file_path: PathLike,
     log: Optional[logging.Logger] = None,
+    *,
+    overwrite: bool = False,
 ) -> None:
     """
     Save a pandas DataFrame to a Parquet file.
@@ -176,15 +188,23 @@ def save_dataframe_to_parquet(
     Args:
         data: DataFrame to persist.
         file_path: Destination file path. Accepts ``str`` or ``Path``.
+            When the suffix is not ``.parquet``, it is appended automatically.
         log: Optional logger for progress and dataset summary.
+        overwrite: When ``False`` (default), raises if the target file exists.
 
     Raises:
+        FileExistsError: When ``overwrite`` is ``False`` and the file exists.
         OSError: When the file cannot be written.
 
     Note:
         Requires ``pyarrow`` or ``fastparquet`` installed in the environment.
     """
-    path = _as_path(file_path)
+    path = _resolve_parquet_path(file_path)
+
+    if path.exists() and not overwrite:
+        raise FileExistsError(
+            f"Parquet file already exists: {path}. Set overwrite=True to replace it."
+        )
 
     if log:
         log.info("Saving dataframe to parquet file...")

@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Run Python File in Terminal",
+      "label": "XploreDS: Run no Terminal",
       "type": "shell",
       "command": "${workspaceFolder}/.venv/bin/python -u ${file}",
       "options": {
@@ -21,7 +21,7 @@
         "focus": true,
         "panel": "dedicated",
         "showReuseMessage": false,
-        "clear": true
+        "clear": false
       },
       "problemMatcher": []
     }

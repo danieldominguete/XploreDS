@@ -14,7 +14,7 @@ import time
 import warnings
 from datetime import datetime
 from pathlib import Path
-from typing import Final
+from typing import Any, Final
 
 import psutil
 
@@ -45,27 +45,11 @@ def _configure_python_warnings() -> None:
     warnings.filterwarnings(action)
 
 
-class _FlushingStreamHandler(logging.StreamHandler):
-    """Stream handler that flushes after each record (helps IDE terminals)."""
-
-    def emit(self, record: logging.LogRecord) -> None:
-        super().emit(record)
-        self.flush()
-        stream = self.stream
-        if stream is not None and hasattr(stream, "flush"):
-            stream.flush()
-
-
 def _log_bordered(logger: logging.Logger, message: str, separator: str) -> None:
     """Log a message framed by the same separator line above and below."""
     logger.info(separator)
     logger.info(message)
     logger.info(separator)
-
-
-def _console_stream():
-    """Return the real stdout stream, bypassing IDE redirects when possible."""
-    return sys.__stdout__ if sys.__stdout__ is not None else sys.stdout
 
 
 class XploreDSLogging:
@@ -108,29 +92,26 @@ class XploreDSLogging:
         logger.propagate = False
 
         formatter = logging.Formatter(_LOG_FORMAT, datefmt=_LOG_DATE_FORMAT)
-        file_handler = logging.FileHandler(self.log_file)
-        stream = _console_stream()
-        stream_handler = _FlushingStreamHandler(stream)
-        if hasattr(stream, "reconfigure"):
-            stream.reconfigure(line_buffering=True)
 
+        file_handler = logging.FileHandler(self.log_file)
+        stream_handler = logging.StreamHandler(sys.stderr)
         for handler in (file_handler, stream_handler):
             handler.setFormatter(formatter)
             logger.addHandler(handler)
 
         return logger
 
-    def info(self, message: str) -> None:
+    def info(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log an information-level message."""
-        self.logger.info(message)
+        self.logger.info(message, *args, **kwargs)
 
-    def warning(self, message: str) -> None:
+    def warning(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log a warning-level message."""
-        self.logger.warning(message)
+        self.logger.warning(message, *args, **kwargs)
 
-    def error(self, message: str) -> None:
+    def error(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log an error-level message."""
-        self.logger.error(message)
+        self.logger.error(message, *args, **kwargs)
 
     def title(self, message: str) -> None:
         """Log a top-level title with a heavy separator."""
@@ -211,3 +192,20 @@ class XploreDSLogging:
         self.logger.info("Root folder: %s", self.project_root)
         self.logger.info("Run name: %s", self.log_run)
         self.logger.info("Artifacts folder: %s", self.log_path)
+
+
+def create_logger(project_root: PathLike, script_path: PathLike) -> XploreDSLogging:
+    """
+    Create the run logger for the current script.
+
+    Args:
+        project_root: Root directory of the XploreDS project.
+        script_path: Path to the script file being executed.
+
+    Returns:
+        Configured ``XploreDSLogging`` instance.
+    """
+    return XploreDSLogging(
+        project_root=project_root,
+        script_name=script_path,
+    )

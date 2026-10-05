@@ -1,7 +1,5 @@
 """
-Xplore DS :: Cookbook Script Template
-
-Standard pipeline template for scripts under ``cookbook/``.
+Xplore DS :: Data Analysis - Exploratory Data Analysis (EDA)
 
 Author: daniel.dominguet@gmail.com
 """
@@ -32,15 +30,18 @@ def main() -> None:
     # ================================
     # Parameters configuration
     # ================================
-    var_example = "example"
+    dataset_file_path = "data/raw/credit-g.parquet"
 
     try:
         # ================================
         # Pipeline steps
         # ================================
-        log.title("Pipeline steps")
-        # Pipeline steps
-        log.info(f"Variable example: {var_example}")
+        log.title("Exploratory Data Analysis (EDA)")
+
+        from ydata_profiling import ProfileReport
+profile = ProfileReport(df, title="Relatório de Crédito", explorative=True)
+profile.to_file("relatorio_eda.html")
+
     finally:
         # ================================
         # Closing run

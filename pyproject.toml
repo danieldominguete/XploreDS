@@ -1,6 +1,6 @@
 [project]
 name = "xploreds"
-version = "0.1.0"
+version = "0.2.0"
 description = "Library and cookbook codes for Data Science Projects"
 authors = [
     { name = "Daniel Dominguete", email = "daniel.dominguete@gmail.com" },
@@ -22,7 +22,6 @@ dev = [
     "commitizen>=4.6",
     "ipykernel>=6.29",
     "nbstripout>=0.9.1",
-    "pre-commit>=4.0",
     "pytest>=8.0",
 ]
 

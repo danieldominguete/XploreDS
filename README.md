@@ -149,7 +149,7 @@ uv run cz commit
 ```bash
 uv run cz bump          # bump de versao + CHANGELOG + tag
 uv build                # gera dist/*.whl
-uv run --with xploredev --no-project -- python -c "import xploredev"  # testar artefato
+uv run --with xploreds --no-project -- python -c "import xploreds"  # testar artefato
 uv run --env-file .env --no-project -- uv publish              # publica no PyPI (quando configurado)
 git push && git push --tags
 ```

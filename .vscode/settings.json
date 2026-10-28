@@ -1,12 +1,3 @@
 {
-  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
-  "python.analysis.extraPaths": ["${workspaceFolder}/src"],
-  "python.terminal.executeInFileDir": false,
-  "python.terminal.focusAfterLaunch": true,
-  "python.terminal.launchArgs": ["-u"],
-  "python.envFile": "${workspaceFolder}/.env",
-  "python.terminal.activateEnvironment": true,
-  "terminal.integrated.env.osx": {
-    "PYTHONUNBUFFERED": "1"
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python"
   }
-}

@@ -32,11 +32,19 @@ Os logs tambem sao gravados em `runs/<script>_<timestamp>/`.
 
 ## Notebooks (`.ipynb`)
 
-O hook **nbstripout** (pre-commit) remove outputs de notebooks antes de cada commit.
+Outputs nao entram no Git via **filtro Git** do `nbstripout` (nao e hook pre-commit).
+Regras versionadas em `.gitattributes`; o filtro e registrado em `.git/config` por clone.
 
 ```bash
-uv run pre-commit install
-uv run pre-commit run nbstripout --all-files
+uv run nbstripout --install --attributes .gitattributes
+uv run nbstripout --is-installed
+git ls-files -z '*.ipynb' | xargs -0 uv run nbstripout --verify
+```
+
+Commitizen (mensagens de commit) continua opcional via pre-commit:
+
+```bash
+uv run pre-commit install --hook-type commit-msg
 ```
 
 ## uv — desenvolvimento local
